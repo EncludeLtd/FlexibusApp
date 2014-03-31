@@ -105,7 +105,7 @@ public class TodaysBusServiceList extends ListActivity
 		}
     }
     
-    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> 
+    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
@@ -125,7 +125,8 @@ public class TodaysBusServiceList extends ListActivity
 					if (gs[0].LoggedIn())
 					{
 						Log.v(DEBUG_TAG, "TodaysBusServiceList doInBackground Logged In");
-						busTrips = gs[0].getDataHandler().getTodaysBusTrips();
+						busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
+						// TODO this will return null if it has to call out - so do the rest of the work in responseReceived
 						if (busTrips != null)
 						{
 							Log.v(DEBUG_TAG, "Bus trips found");
@@ -156,7 +157,7 @@ public class TodaysBusServiceList extends ListActivity
 				}
 				else
 				{
-					busTrips = gs[0].getDataHandler().getTodaysBusTrips();
+					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
 				}
 				return "";
 			}
@@ -167,7 +168,8 @@ public class TodaysBusServiceList extends ListActivity
 			}
 		}
 
-		protected void onPostExecute(String result) 
+		@Override
+		public void responseReceived(String result)
 		{
 	        if (m_progress != null)
 	        {
