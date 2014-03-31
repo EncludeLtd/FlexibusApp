@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/layout_root"
+              android:orientation="horizontal"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:padding="10dp"
+              >
+    <Button android:layout_height="wrap_content" android:layout_width="wrap_content" android:id="@+id/cancelButton" android:text="Cancel" android:layout_alignBaseline="@+id/sendButton" android:layout_alignBottom="@+id/sendButton" android:layout_alignParentRight="true" android:layout_marginRight="18dp"></Button>
+    <TextView android:id="@+id/statusText" android:layout_height="wrap_content" android:layout_width="fill_parent" android:layout_alignParentTop="true" android:layout_alignParentLeft="true" android:text="@string/initialFuelPurchaseText"></TextView>
+    <EditText android:digits="0123456789" android:inputType="number" android:layout_width="wrap_content" android:scrollHorizontally="false" android:layout_height="wrap_content" android:id="@+id/fuelEdit" android:lines="1" android:contentDescription="Fuel in litres" android:selectAllOnFocus="true" android:hint="Fuel (litres)" android:layout_below="@+id/statusText" android:layout_centerHorizontal="true" android:layout_marginTop="22dp">
+        <requestFocus></requestFocus>
+    </EditText>
+    <EditText android:digits="0123456789" android:inputType="number" android:layout_width="wrap_content" android:scrollHorizontally="false" android:layout_height="wrap_content" android:id="@+id/odometer" android:lines="1" android:contentDescription="Odometer reading" android:selectAllOnFocus="true" android:hint="Odometer" android:layout_below="@+id/fuelEdit" android:layout_centerHorizontal="true"></EditText>
+    <Button android:layout_width="wrap_content" android:id="@+id/sendButton" android:layout_height="wrap_content" android:text="Send" android:layout_below="@+id/odometer" android:layout_centerHorizontal="true"></Button>
+</RelativeLayout>

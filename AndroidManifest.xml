@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+	package="ie.enclude.flexibus"
+	android:versionCode="2"
+	android:versionName="2.0"
+	android:installLocation="internalOnly">
+
+	<application android:icon="@drawable/sf__icon"
+	    android:label="@string/app_name"
+		android:name=".FlexibusApp"
+		android:manageSpaceActivity="com.salesforce.androidsdk.ui.ManageSpaceActivity">
+
+    	<activity android:name=".FlexibusActivity" android:configChanges="orientation" android:label="@string/app_name">
+   	    	    
+    	</activity>
+        <activity android:name=".Splash"
+                  android:label="@string/app_name">
+                <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+         </activity>
+        <activity android:name=".BusListView"></activity>
+        <activity android:name=".DriversDailyCheck"></activity>
+        <activity android:name=".RecordFuelPurchase"></activity>
+        <activity android:name=".PassengerList" android:configChanges="orientation"></activity>
+        <activity android:name=".TodaysBusServiceList" android:configChanges="orientation"></activity>
+	</application>
+
+	<uses-sdk android:minSdkVersion="10" />
+   <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"></uses-permission>
+    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+
+    <!--
+        GCM permission to ensure that only this application can
+        receive the messages and registration result. This must be of
+        the format <app-package-name>.C2D_MESSAGE for it to work.
+    -->
+    <permission android:name="ie.enclude.flexibus.C2D_MESSAGE"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="ie.enclude.flexibus.C2D_MESSAGE" />
+</manifest>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/layout_root"
+              android:orientation="horizontal"
+              android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+              android:padding="10dp"
+              >
+    <TextView android:text="Enter a note about the problem (up to 255 characters)" android:id="@+id/text" android:textColor="#FFF" android:layout_width="wrap_content" android:layout_height="40dp"></TextView>
+    <EditText android:id="@+id/editNoteText" android:layout_width="wrap_content" android:layout_height="166dp" android:layout_centerVertical="true" android:layout_alignRight="@+id/text" android:layout_alignLeft="@+id/text" android:inputType="text|textMultiLine|textShortMessage">
+        <requestFocus></requestFocus>
+    </EditText>
+    <Button android:id="@+id/sendButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Send" android:layout_centerHorizontal="true" android:layout_alignParentBottom="true"></Button>
+</RelativeLayout>

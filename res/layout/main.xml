@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@+id/LinearLayout1" xmlns:android="http://schemas.android.com/apk/res/android" android:layout_height="fill_parent" android:layout_width="fill_parent" android:orientation="vertical">
+<TextView android:layout_width="fill_parent" android:text="@string/initialText" android:id="@+id/statusText" android:layout_height="wrap_content" android:layout_below="@+id/currentBusText" android:layout_alignParentLeft="true"></TextView>
+<EditText android:selectAllOnFocus="true" android:lines="1" android:layout_height="wrap_content" android:contentDescription="Odometer reading" android:layout_width="wrap_content" android:hint="Odometer" android:digits="0123456789" android:id="@+id/odometer" android:inputType="number" android:scrollHorizontally="false" android:layout_below="@+id/statusText" android:layout_centerHorizontal="true">
+    <requestFocus></requestFocus>
+</EditText>
+
+<Button android:id="@+id/sendOdoReading" android:text="Send Odometer Reading" android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_below="@+id/odometer" android:layout_centerHorizontal="true"></Button>
+<TextView android:layout_height="wrap_content" android:text="TextView" android:textAppearance="?android:attr/textAppearanceLarge" android:id="@+id/busRegTextView" android:layout_width="wrap_content" android:layout_alignParentBottom="true" android:layout_alignParentLeft="true"></TextView>
+<TextView android:layout_height="wrap_content" android:text="TextView" android:textAppearance="?android:attr/textAppearanceLarge" android:layout_width="wrap_content" android:layout_alignParentBottom="true" android:layout_alignParentRight="true" android:id="@+id/busOdoTextView"></TextView>
+<TextView android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium" android:id="@+id/textView1" android:layout_width="wrap_content" android:layout_above="@+id/busRegTextView" android:layout_alignParentLeft="true" android:text="Current Bus"></TextView>
+<TextView android:layout_height="wrap_content" android:textAppearance="?android:attr/textAppearanceMedium" android:layout_width="wrap_content" android:layout_alignBaseline="@+id/textView1" android:layout_alignBottom="@+id/textView1" android:layout_alignParentRight="true" android:id="@+id/LastOdometer" android:text="Odometer"></TextView>
+<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:id="@+id/selectBusButton" android:layout_above="@+id/textView1" android:layout_alignRight="@+id/textView1" android:text="Select Bus"></Button>
+<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Record Fuel Purchase" android:id="@+id/recordFuelPurchaseButton" android:layout_below="@+id/sendOdoReading" android:layout_centerHorizontal="true"></Button>
+<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Driver's Daily Check" android:id="@+id/dailyCheckButton" android:layout_below="@+id/recordFuelPurchaseButton" android:layout_centerHorizontal="true"></Button>
+<Button android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Passenger List" android:id="@+id/passengerListButton" android:layout_below="@+id/dailyCheckButton" android:layout_centerHorizontal="true"></Button>
+</RelativeLayout>

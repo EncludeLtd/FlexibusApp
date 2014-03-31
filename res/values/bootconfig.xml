@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <string name="remoteAccessConsumerKey">3MVG9WtWSKUDG.x6pEndQgx6g.2Pi92T4WlI_wHGasdKKrRh9I9PajhMkq_gpYPFZuunfRo0C5LmmoYlsK0wN</string>
+    <string name="oauthRedirectURI">flexibusactivity:success</string>
+    <string-array name="oauthScopes">
+        <item>api</item>
+    </string-array>
+    <string name="androidPushNotificationClientId"></string>
+</resources>

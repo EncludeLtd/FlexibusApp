@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_type">ie.enclude.flexibus.login</string>
+	<string name="app_name"><b>Flexibus</b></string>
+	<string name="app_package">ie.enclude.flexibus</string>
+    <string name="welcome">Welcome %s</string>
+	<string name="logout_button">Logout</string>
+	<string name="fetch_contacts_button">Fetch Contacts</string>
+	<string name="fetch_accounts_button">Fetch Accounts</string>
+	<string name="clear_button">Clear</string>
+   <string name="initialText">Enter odometer reading</string>
+    <string name="app_name">Flexibus</string>
+    <string name="appby">an app by</string>
+    <string name="version">V1.0</string>
+    <string name="readytosend">Ready to send odometer reading</string><string name="readytosendFuelPurchase">Ready to send fuel purchase record</string>
+    <string name="sentMessage">Sent Odometer reading %1$s</string>
+    <string name="sendingMessage">Sending SMS message</string>
+    <string name="currentBusText">Current bus is: %1$s, Odometer: %2$s</string>
+    <string name="selectBusText">Select a bus by clicking on the &quot;Select Bus&quot; button</string>
+    <string name="selectBusButtonText">Select Bus</string>
+    <string name="changeBusText">Change Bus</string>
+    <string name="saveTripReportsText">Save Trip Reports</string>
+    <string name="alertOdometerLowMessage">This odometer reading of %1$d is less than the previous value of %2$d, are you sure you want to enter it?</string>
+    <string name="alertOdometerTitle">Check Odometer Reading</string>
+    <string name="alertOdometerHighMessage">This odometer reading of %1$d is much bigger than the previous value of %2$d, are you sure you want to enter it?</string>
+    <string name="alertYesButtonText">Yes</string>
+    <string name="alertNoButtonText">No</string>
+    <string name="alertAddNoteMessage">Do you want to add a note before sending this report?</string>
+    <string name="alertAddNoteTitle">Add Note</string>
+    <string name="alertAbortButtonText">Abort</string>
+    <string name="addNoteTitle">Add Note</string>
+    <string name="initialFuelPurchaseText">Enter fuel in litres and odometer reading</string>
+    <string name="addFreePassenger">Add Free Travel Passenger (currently %1$d)</string>
+    <string name="addFarePassenger">Add Fare Paying Passenger (currently %1$d)</string>
+</resources>
