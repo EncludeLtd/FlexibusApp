@@ -165,6 +165,7 @@ public class PassengerList extends ListActivity
 				{
 					gs[0].getDataHandler().localLogin();
 					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
+					// TODO this will return null if it has to call out - so do the rest of the work in responseReceived
 					if (busTrips != null)
 					{
 						db.InitialiseDatabase(gs[0].getCurrentBusName());
