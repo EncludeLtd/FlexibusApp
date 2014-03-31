@@ -148,7 +148,7 @@ public class PassengerList extends ListActivity
 		return true;
 	}
 	
-    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> 
+    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
@@ -163,34 +163,27 @@ public class PassengerList extends ListActivity
 				}
 				if (!db.ContainsTodaysTrips(gs[0].getCurrentBusName()))
 				{
-					String result = gs[0].getDataHandler().localLogin();
-					if (gs[0].LoggedIn())
+					gs[0].getDataHandler().localLogin();
+					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
+					if (busTrips != null)
 					{
-						busTrips = gs[0].getDataHandler().getTodaysBusTrips();
-						if (busTrips != null)
+						db.InitialiseDatabase(gs[0].getCurrentBusName());
+						for (BusTrip trip: busTrips)
 						{
-							db.InitialiseDatabase(gs[0].getCurrentBusName());
-							for (BusTrip trip: busTrips)
+							db.insertBusTrip(trip);
+							passengers = gs[0].getDataHandler().getPassengerList(trip.salesforce_ID);
+							if (passengers != null)
 							{
-								db.insertBusTrip(trip);
-								passengers = gs[0].getDataHandler().getPassengerList(trip.salesforce_ID);
-								if (passengers != null)
+								for (Passenger pass: passengers)
 								{
-									for (Passenger pass: passengers)
-									{
-										db.insertPassenger(pass);
-									}
+									db.insertPassenger(pass);
 								}
 							}
-						}
-						else
-						{
-							return gs[0].getDataHandler().getLastError();
 						}
 					}
 					else
 					{
-						return result;
+						return gs[0].getDataHandler().getLastError();
 					}
 				}
 				passengers = db.getTodaysPassengers(gs[0].getCurrentBusTripID());
@@ -212,7 +205,8 @@ public class PassengerList extends ListActivity
 			}
 		}
 
-		protected void onPostExecute(String result) 
+		@Override
+		public void responseReceived(String result)
 		{
 	        if (m_progress != null)
 	        {

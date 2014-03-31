@@ -1,6 +1,7 @@
 package ie.enclude.salesforce.operation;
 
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +23,8 @@ public class LocalDataHandler
 {
 	public static final String DEBUG_TAG="FlexibusLogging";
 
+	private static final long MILLIS_PER_DAY = 86400000;
+
 	private static ApexApiCaller bind = new ApexApiCaller();
 	
 	private String[] busNames;
@@ -33,6 +36,8 @@ public class LocalDataHandler
 	private List<String> startupCheckLabels;
 	private Map<String, String> startupCheckNames;
 	private String startupCheckListFaultReport;
+	private List<BusTrip> todaysTrips;
+	private Date dayTripsRetrieved;
 	
 	public LocalDataHandler(FlexibusActivity mainActivity) 
 	{
@@ -192,11 +197,13 @@ public class LocalDataHandler
 	}
 
 	// on startup this is called just in case the odo reading has been updated by a different phone
+	// return true if this will make an asynch call, false if it will return immediately
 	public boolean initialiseSelectedBus(String busName, String busOdoReading, SalesforceResponseInterface sfrp) 
 	{
 		if (m_selectedBus == null)
 		{
-			m_selectedBus = bind.getOneBus(busName, sfrp);
+			bind.getOneBus(this, busName, sfrp); // if this succeeds m_selectedBus will be updated in setOneBusDetails
+			return true;
 		}
 		else
 		{
@@ -208,24 +215,33 @@ public class LocalDataHandler
 			catch (JSONException e) {
 				Log.v(DEBUG_TAG, "initialiseSelectedBus " + e.getMessage());
 				e.printStackTrace();
-				return false;
 			}
+			return false;
 		}
-		return (m_selectedBus != null);
 	}
 
+	public void setOneBusDetails (JSONObject busDetails)
+	{
+		m_selectedBus = busDetails;
+	}
+	
 	public String getLastError() 
 	{
 		return bind.getLastError();
 	}
 
-	public List<String> getFieldList(String objectName) 
+	public List<String> getFieldList(String objectName, SalesforceResponseInterface sfrp) 
 	{
 		if (startupCheckLabels == null)
 		{
-			startupCheckLabels = bind.getFieldList(this, objectName);
+			startupCheckLabels = bind.getFieldList(this, objectName, sfrp);
 		}
 		return startupCheckLabels;
+	}
+	
+	public void setStartupCheckLabels (List<String> labels)
+	{
+		startupCheckLabels = labels;
 	}
 	
 	public void addPickListToDriversStartupCheckList (String checkListItem, List<String>pickList)
@@ -248,8 +264,8 @@ public class LocalDataHandler
 		startupCheckListFaultReport = faultReport;
 	}
 
-	public String sendStartupCheckListToSalesforce() {
-		return bind.sendStartupCheckListToSalesforce (this, listofPickLists, startupCheckLabels, startupCheckListFaultReport);
+	public String sendStartupCheckListToSalesforce(SalesforceResponseInterface sfrp) {
+		return bind.sendStartupCheckListToSalesforce (this, listofPickLists, startupCheckLabels, startupCheckListFaultReport, sfrp);
 	}
 
 	public void setDriversStartupCheckListName(String label, String name) 
@@ -278,13 +294,36 @@ public class LocalDataHandler
 		startupCheckListFaultReport = "";
 	}
 
-	public String recordFuelPurchased(FlexibusApp gs) 
+	public String recordFuelPurchased(FlexibusApp gs, SalesforceResponseInterface sfrp) 
 	{
-		return bind.recordFuelPurchased(this, gs);
+		return bind.recordFuelPurchased(this, gs, sfrp);
 	}
 
-	public List<BusTrip> getTodaysBusTrips() {
-		return bind.getTodaysBusTrips(this);
+	public List<BusTrip> getTodaysBusTrips(SalesforceResponseInterface sfrp) 
+	{
+		Date dayNow = new Date();
+		if (isSameDay (dayNow, dayTripsRetrieved)) return todaysTrips;
+		else 
+		{
+			bind.getTodaysBusTrips(this, sfrp);
+			return null;
+		}
+	}
+
+	public static boolean isSameDay(Date date1, Date date2) {
+
+	    // Strip out the time part of each date.
+	    long julianDayNumber1 = date1.getTime() / MILLIS_PER_DAY;
+	    long julianDayNumber2 = date2.getTime() / MILLIS_PER_DAY;
+
+	    // If they now are equal then it is the same day.
+	    return julianDayNumber1 == julianDayNumber2;
+	}
+	
+	public void setTodaysTrips (List<BusTrip> trips)
+	{
+		 todaysTrips = trips;
+		 dayTripsRetrieved = new Date();
 	}
 
 	public List<Passenger> getPassengerList(String busTripID) {
@@ -294,5 +333,4 @@ public class LocalDataHandler
 	public String sendTripReports(DBAdapter database) {
 		return bind.sendTripReportsUsingSoap(this, database);
 	}
-
 }

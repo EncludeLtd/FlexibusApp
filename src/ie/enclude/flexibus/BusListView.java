@@ -1,18 +1,8 @@
 package ie.enclude.flexibus;
 
-import java.io.UnsupportedEncodingException;
-
-import org.json.JSONArray;
-
-import com.salesforce.androidsdk.app.SalesforceSDKManager;
-import com.salesforce.androidsdk.rest.RestRequest;
-import com.salesforce.androidsdk.rest.RestResponse;
-import com.salesforce.androidsdk.rest.RestClient.AsyncRequestCallback;
-
 import ie.enclude.flexibus.R;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;

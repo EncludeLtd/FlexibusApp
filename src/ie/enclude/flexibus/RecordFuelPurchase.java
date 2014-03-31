@@ -197,16 +197,17 @@ public class RecordFuelPurchase extends Activity
    		new SalesforceSendFuelPurchasedTask().execute(gs);
     }
 
-	public class SalesforceSendFuelPurchasedTask extends AsyncTask<FlexibusApp, Void, String> 
+	public class SalesforceSendFuelPurchasedTask extends AsyncTask<FlexibusApp, Void, String>  implements SalesforceResponseInterface
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
 		{
 			gs[0].getDataHandler().localLogin();
-			return gs[0].getDataHandler().recordFuelPurchased(gs[0]);
+			return gs[0].getDataHandler().recordFuelPurchased(gs[0], this);
 		}
 
-		protected void onPostExecute(String result) 
+		@Override
+		public void responseReceived(String result)
 		{
 	        if (m_progress != null)
 	        {

@@ -88,8 +88,8 @@ public class DataHandleFactory {
 		return ldh.getLastError();
 	}
 
-	public List<String> getFieldList(String objectName) {
-		return ldh.getFieldList(objectName);
+	public List<String> getFieldList(String objectName, SalesforceResponseInterface sfrp) {
+		return ldh.getFieldList(objectName, sfrp);
 	}
 
 	public String[] getPickList(String pickListtName) {
@@ -100,8 +100,8 @@ public class DataHandleFactory {
 		ldh.addFaultReportTextToCheckList(faultReport);
 	}
 
-	public String sendStartupCheckListToSalesforce() {
-		return ldh.sendStartupCheckListToSalesforce();
+	public String sendStartupCheckListToSalesforce(SalesforceResponseInterface sfrp) {
+		return ldh.sendStartupCheckListToSalesforce(sfrp);
 	}
 
 	public void setPickListResult(String alertTitle, String itemPicked) {
@@ -114,12 +114,12 @@ public class DataHandleFactory {
 		
 	}
 
-	public String recordFuelPurchased(FlexibusApp gs) {
-		return ldh.recordFuelPurchased(gs);
+	public String recordFuelPurchased(FlexibusApp gs, SalesforceResponseInterface sfrp) {
+		return ldh.recordFuelPurchased(gs, sfrp);
 	}
 
-	public List<BusTrip> getTodaysBusTrips() {
-		return ldh.getTodaysBusTrips();
+	public List<BusTrip> getTodaysBusTrips(SalesforceResponseInterface sfrp) {
+		return ldh.getTodaysBusTrips(sfrp);
 	}
 
 	public List<Passenger> getPassengerList(String busTripID) {

@@ -2,6 +2,9 @@
  * Copyright (C) 2008 Dai Odahara.
  */
 
+// client.sendAsync calls are more difficult than they need to be because success can result in error code 201
+// when the request is RestRequest.getRequestForCreate
+
 package ie.enclude.salesforce.operation;
 
 
@@ -21,7 +24,6 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
@@ -30,6 +32,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import com.android.volley.VolleyError;
 import com.salesforce.androidsdk.rest.RestClient;
 import com.salesforce.androidsdk.rest.RestClient.AsyncRequestCallback;
 import com.salesforce.androidsdk.rest.RestRequest;
@@ -42,14 +45,11 @@ import com.sforce.android.soap.partner.sobject.SObject;
 */
 import android.util.Log;
 import ie.enclude.flexibus.CONSTANTS;
-import ie.enclude.flexibus.FlexibusActivity;
 import ie.enclude.flexibus.FlexibusApp;
-import ie.enclude.flexibus.R;
 import ie.enclude.flexibus.SalesforceResponseInterface;
 import ie.enclude.flexibus.database.DBAdapter;
 import ie.enclude.flexibus.util.BusTrip;
 import ie.enclude.flexibus.util.Passenger;
-import ie.enclude.flexibus.util.PassengerTrip;
 import ie.enclude.salesforce.util.OAuthTokens;
 
 import ie.enclude.salesforce.util.StaticInformation;
@@ -225,17 +225,24 @@ public class ApexApiCaller
 				RestRequest restRequest = RestRequest.getRequestForCreate(API_VERSION, "Odometer_Reading__c", data);
 					     
 				client.sendAsync(restRequest, new AsyncRequestCallback() {
-					@Override
-					public void onSuccess(RestRequest request, RestResponse result) {
+					private void processSuccess ()
+					{
 						Log.v(DEBUG_TAG, "sendODOReading onSuccess");
 						dataHandler.setCurrentBusOdoReading(odoReading);
 						sfrp.responseReceived("Odometer reading accepted");
+					}
+					@Override
+					public void onSuccess(RestRequest request, RestResponse result) {
+						processSuccess ();
 						}
 										
 					@Override
 					public void onError(Exception e) {
-						Log.v(DEBUG_TAG, "addOdometerReadingToSelectedBus onError " + e);
-						if (e instanceof IOException) sfrp.responseReceived("Odometer reading accepted");
+						Log.v(DEBUG_TAG, "addOdometerReadingToSelectedBus onError " + ((VolleyError)e).networkResponse.statusCode);
+						if (e instanceof IOException || ((VolleyError)e).networkResponse.statusCode == 201) 
+						{
+							processSuccess ();
+						}
 						else sfrp.responseReceived("Failed to add odometer reading " + e.getMessage());
 						
 				}
@@ -263,8 +270,7 @@ public class ApexApiCaller
 			return "Not logged In";
 		}
 	}
-	// TODO return the bus details as a JSON string
-	public String getOneBus(String busName, final SalesforceResponseInterface sfrp)
+	public String getOneBus(final LocalDataHandler dataHandler, String busName, final SalesforceResponseInterface sfrp)
 	{
 		
 		if (FlexibusApp.client != null)
@@ -284,8 +290,9 @@ public class ApexApiCaller
 					try {
 						JSONArray records = result.asJSONObject().getJSONArray("records");
 						JSONObject record = (JSONObject) records.get(0);
-						String accountName = record.getString("Name");
-						String odoReading = record.getString("ODO_Reading__c");						sfrp.responseReceived("");
+						dataHandler.setOneBusDetails(record);
+						
+						sfrp.responseReceived("");
 					} catch (Exception e) {
 						onError(e);
 					}
@@ -358,105 +365,109 @@ public class ApexApiCaller
 		}
 	}
 	
-	public List<String> getFieldList (LocalDataHandler dataHandler, String objectName) 
+	public List<String> getFieldList (final LocalDataHandler dataHandler, String objectName, final SalesforceResponseInterface sfrp) 
 	{
-		OAuthTokens myTokens = getAccessTokens();
-		if (myTokens != null)
+		if (FlexibusApp.client != null)
 		{
-			String url = myTokens.get_instance_url() + "/services/data/v20.0/sobjects/" + objectName + "/describe/";
-			HttpGet getRequest = new HttpGet(url);
-			getRequest.addHeader("Authorization", "OAuth " + myTokens.get_access_token());
-			
+			RestClient client = FlexibusApp.client;
 			try 
 			{
-				Log.v(DEBUG_TAG, "HTTP call in getFieldList");
-				String result = ProcessHttpCall (getRequest);
-				if (!result.equals(""))
+				RestRequest restRequest = RestRequest.getRequestForDescribe(API_VERSION, objectName);
+
+				client.sendAsync(restRequest, new AsyncRequestCallback() {
+				
+				@Override
+				public void onSuccess(RestRequest request, RestResponse result)
 				{
-					JSONObject object = (JSONObject) new JSONTokener(result).nextValue();
-					JSONArray records = object.getJSONArray("fields");
-					List<String> labels = new ArrayList<String>(records.length());	
-					for (int i=0;i<records.length();i++) 
+					try
 					{
-						JSONObject record = (JSONObject) records.get(i);
-						String name = record.getString("name");
-						String type = record.getString("type");
-						if (name.endsWith("__c"))
+						JSONArray records = result.asJSONObject().getJSONArray("fields");
+						List<String> labels = new ArrayList<String>(records.length());	
+						for (int i=0;i<records.length();i++) 
 						{
-							if (type.equals("picklist"))
+							JSONObject record = (JSONObject) records.get(i);
+							String name = record.getString("name");
+							String type = record.getString("type");
+							if (name.endsWith("__c"))
 							{
-								String label = record.getString("label");
-								labels.add(label);
-								dataHandler.setDriversStartupCheckListName(label, name);
-								
-								JSONArray pickList = record.getJSONArray("picklistValues");
-								List<String> pickListValues = new ArrayList<String>(pickList.length());
-								for (int j=0; j<pickList.length();j++)
+								if (type.equals("picklist"))
 								{
-									JSONObject pickListItem = (JSONObject) pickList.get(j);
-									pickListValues.add(pickListItem.getString("value"));
-								}
-								if (pickList.length() > 0)
-								{
-									dataHandler.addPickListToDriversStartupCheckList(label, pickListValues);
+									String label = record.getString("label");
+									labels.add(label);
+									dataHandler.setDriversStartupCheckListName(label, name);
+									
+									JSONArray pickList = record.getJSONArray("picklistValues");
+									List<String> pickListValues = new ArrayList<String>(pickList.length());
+									for (int j=0; j<pickList.length();j++)
+									{
+										JSONObject pickListItem = (JSONObject) pickList.get(j);
+										pickListValues.add(pickListItem.getString("value"));
+									}
+									if (pickList.length() > 0)
+									{
+										dataHandler.addPickListToDriversStartupCheckList(label, pickListValues);
+									}
 								}
 							}
 						}
+
+						if (records.length() > 0)
+						{
+							m_lastErrorMsg = "";
+							Collections.sort(labels, String.CASE_INSENSITIVE_ORDER);
+							dataHandler.setStartupCheckLabels (labels);
+							sfrp.responseReceived ("");
+						}
+						else
+						{
+							m_lastErrorMsg = "No items in this checklist";
+							sfrp.responseReceived (m_lastErrorMsg);
+						}
 					}
-					if (records.length() > 0)
+					catch (JSONException e) 
 					{
-						m_lastErrorMsg = "";
-						Collections.sort(labels, String.CASE_INSENSITIVE_ORDER);
-						return labels;
-					}
-					else
+						Log.v(DEBUG_TAG, "getFieldList " + e.getMessage());
+					} 
+					catch (IOException e) 
 					{
-						m_lastErrorMsg = "No items in this checklist";
-						return null;
+						Log.v(DEBUG_TAG, "getFieldList " + e.getMessage());
+					}	
+				}
+				
+					@Override
+					public void onError(Exception e) {
+						m_lastErrorMsg = "Failed to process Http call";
+						sfrp.responseReceived (m_lastErrorMsg);
 					}
-				}
-				else
-				{
-					m_lastErrorMsg = "Failed to process Http call";
-					return null;
-				}
-			} 
-			catch (IOException e) 
-			{
-				Log.v(DEBUG_TAG, "getFieldList " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return null;
-			} 
-			catch (JSONException e) 
-			{
-				Log.v(DEBUG_TAG, "getFieldList " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return null;
+				});
+				m_lastErrorMsg = "";
 			}
+			catch (Exception e) 
+			{
+				Log.v(DEBUG_TAG, "getFieldList " + e.getMessage());
+				m_lastErrorMsg = e.toString();
+			} 
 		}
 		else
 		{
 			Log.v(DEBUG_TAG, "getFieldList not logged in");
 			m_lastErrorMsg = "Not logged In";
-			return null;
 		}	
+		return null;
 	}
 
 	public String sendStartupCheckListToSalesforce(LocalDataHandler dataHandler,
 			Map<String, List<String>> listofPickLists,
-			List<String> startupCheckLabels, String startupCheckListFaultReport) 
+			List<String> startupCheckLabels, String startupCheckListFaultReport, final SalesforceResponseInterface sfrp) 
 	{
-		OAuthTokens myTokens = getAccessTokens();
-		if (myTokens != null)
+		if (FlexibusApp.client != null)
 		{
-			String url = myTokens.get_instance_url() + "/services/data/v20.0/sobjects/Bus_Startup_CheckList__c/";
-			HttpPost post = new HttpPost(url);
-			
-			JSONObject data = new JSONObject();
+			RestClient client = FlexibusApp.client;
+			Map<String, Object> data = new HashMap<String, Object>();
 			
 			try 
 			{
-				List<String> labels = dataHandler.getFieldList("Bus_Startup_CheckList__c");
+				List<String> labels = dataHandler.getFieldList("Bus_Startup_CheckList__c", sfrp);
 				for (int i=0; i<labels.size(); i++)
 				{
 					String fieldlabel = labels.get(i);
@@ -480,26 +491,32 @@ public class ApexApiCaller
 				}
 				
 				data.put("Bus_Checked__c", dataHandler.getCurrentBusID());
-				StringEntity se = new StringEntity(data.toString());
-				post.setEntity(se);
-				post.setHeader("Authorization", "OAuth " + myTokens.get_access_token());
-				post.setHeader("Content-type", "application/json");
-					     
-				String result = ProcessHttpCall (post);
-				if (!result.equals(""))
-				{
-					return "Startup checklist accepted";
-				}
-				else
-				{
-					return "Failed to add startup checklist";
-				}
+
+				RestRequest restRequest = RestRequest.getRequestForCreate(API_VERSION, "Bus_Startup_CheckList__c", data);
+				     
+				client.sendAsync(restRequest, new AsyncRequestCallback() {
+					private void processSuccess ()
+					{
+						Log.v(DEBUG_TAG, "sendStartupCheckListToSalesforce onSuccess");
+						sfrp.responseReceived("Startup checklist accepted");
+					}
+					@Override
+					public void onSuccess(RestRequest request, RestResponse result) {
+						processSuccess ();
+						}
+										
+					@Override
+					public void onError(Exception e) {
+						Log.v(DEBUG_TAG, "sendStartupCheckListToSalesforce onError " + ((VolleyError)e).networkResponse.statusCode);
+						if (e instanceof IOException || ((VolleyError)e).networkResponse.statusCode == 201) 
+						{
+							processSuccess ();
+						}
+						else sfrp.responseReceived("Failed to add startup checklist " + e.getMessage());
+					}
+				});
+				return "";
 			}
-			catch (JSONException e) 
-			{
-				Log.v(DEBUG_TAG, "sendStartupCheckListToSalesforce " + e.getMessage());
-				return e.toString();
-			} 
 			catch (UnsupportedEncodingException e) 
 			{
 				Log.v(DEBUG_TAG, "sendStartupCheckListToSalesforce " + e.getMessage());
@@ -523,42 +540,43 @@ public class ApexApiCaller
 		}
 	}
 
-	public String recordFuelPurchased(LocalDataHandler dataHandler, FlexibusApp gs) 
+	public String recordFuelPurchased(LocalDataHandler dataHandler, FlexibusApp gs, final SalesforceResponseInterface sfrp) 
 	{
-		OAuthTokens myTokens = getAccessTokens();
-		if (myTokens != null)
+		if (FlexibusApp.client != null)
 		{
-			String url = myTokens.get_instance_url() + "/services/data/v20.0/sobjects/Fuel_Purchase__c/";
-			HttpPost post = new HttpPost(url);
-			
-			JSONObject data = new JSONObject();
+			RestClient client = FlexibusApp.client;
 			
 			try 
 			{
+				Map<String, Object> data = new HashMap<String, Object>();
 				data.put("Mileage__c", gs.getSavedBusOdoReading());
 				data.put("Fuel_Litres__c", gs.getSavedFuelPurchased());
 				data.put("Bus__c", dataHandler.getCurrentBusID());
 					     
-				StringEntity se = new StringEntity(data.toString());
-				post.setEntity(se);
-				post.setHeader("Authorization", "OAuth " + myTokens.get_access_token());
-				post.setHeader("Content-type", "application/json");
-					     
-				String result = ProcessHttpCall (post);
-				if (!result.equals(""))
-				{
-					return "Fuel purchased record accepted";
-				}
-				else
-				{
-					return "Failed to add fuel purchased record";
-				}
+				RestRequest restRequest = RestRequest.getRequestForCreate(API_VERSION, "Fuel_Purchase__c", data);
+
+				client.sendAsync(restRequest, new AsyncRequestCallback() {
+					private void processSuccess ()
+					{
+						Log.v(DEBUG_TAG, "recordFuelPurchased onSuccess");
+						sfrp.responseReceived("Fuel purchased record accepted");
+					}
+					@Override
+					public void onSuccess(RestRequest request, RestResponse result) {
+						processSuccess ();
+						}
+										
+					@Override
+					public void onError(Exception e) {
+						Log.v(DEBUG_TAG, "recordFuelPurchased onError " + ((VolleyError)e).networkResponse.statusCode);
+						if (e instanceof IOException || ((VolleyError)e).networkResponse.statusCode == 201) 
+						{
+							processSuccess ();
+						}
+						else sfrp.responseReceived("Failed to add fuel purchased record " + e.getMessage());
+					}
+				});
 			}
-			catch (JSONException e) 
-			{
-				Log.v(DEBUG_TAG, "recordFuelPurchased " + e.getMessage());
-				return e.toString();
-			} 
 			catch (UnsupportedEncodingException e) 
 			{
 				Log.v(DEBUG_TAG, "recordFuelPurchased " + e.getMessage());
@@ -580,82 +598,73 @@ public class ApexApiCaller
 			Log.v(DEBUG_TAG, "recordFuelPurchased not logged in");
 			return "Not logged In";
 		}
+		return "";
 	}
 
-	public List<BusTrip> getTodaysBusTrips(LocalDataHandler dataHandler) 
+	public boolean getTodaysBusTrips(final LocalDataHandler dataHandler, final SalesforceResponseInterface sfrp) 
 	{
-		OAuthTokens myTokens = getAccessTokens();
-		if (myTokens != null)
+		if (FlexibusApp.client != null)
 		{
+			RestClient client = FlexibusApp.client;
 			Log.v(DEBUG_TAG, "Start getTodaysBusTrips");
 			String currentBus = dataHandler.getCurrentBusID();
-			String url = myTokens.get_instance_url() + "/services/data/v20.0/query/?q=";
 			String soqlQuery = "Select Id, Bus_Trip_Unique_ID__c, Estimated_Start_Time__c, Estimated_End_Time__c, Driver_name__c From Bus_Trip__c "
 					+ "where Actual_Bus__c = '" + currentBus + "' and Date__c = TODAY order by Estimated_Start_Time__c";
 			
 			try
 			{
-				url += URLEncoder.encode(soqlQuery, "UTF-8");
-			}
-			catch(UnsupportedEncodingException e)
-			{
-				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
-				return null;
-			}
-			
-			HttpGet getRequest = new HttpGet(url);
-			getRequest.addHeader("Authorization", "OAuth " + myTokens.get_access_token());
-			
-			try 
-			{
-				Log.v(DEBUG_TAG, "HTTP call in getTodaysBusTrips");
-				String result = ProcessHttpCall (getRequest);
-				if (!result.equals(""))
-				{
-					JSONObject object = (JSONObject) new JSONTokener(result).nextValue();
-					JSONArray records = object.getJSONArray("records");
-					int count = object.getInt("totalSize");
-					
-					List<BusTrip> trips = new ArrayList<BusTrip>(count);
-					
-					for (int i=0;i<count;i++) {
-						JSONObject record = (JSONObject) records.get(i);
-						String salesforce_id = record.getString("Id");
-						String uniqueID = record.getString("Bus_Trip_Unique_ID__c");
-						String startTime = record.getString("Estimated_Start_Time__c");
-						String endTime = record.getString("Estimated_End_Time__c");
-						String driverName = record.getString("Driver_name__c");
-						trips.add (new BusTrip (salesforce_id, startTime, endTime, uniqueID, driverName));
+				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
+	
+				client.sendAsync(restRequest, new AsyncRequestCallback() {
+					@Override
+					public void onSuccess(RestRequest request, RestResponse result) {
+						try 
+						{
+							JSONArray records = result.asJSONObject().getJSONArray("records");
+							int count = records.length();
+								
+							List<BusTrip> trips = new ArrayList<BusTrip>(count);
+								
+							for (int i=0;i<count;i++) {
+								JSONObject record = (JSONObject) records.get(i);
+								String salesforce_id = record.getString("Id");
+								String uniqueID = record.getString("Bus_Trip_Unique_ID__c");
+								String startTime = record.getString("Estimated_Start_Time__c");
+								String endTime = record.getString("Estimated_End_Time__c");
+								String driverName = record.getString("Driver_name__c");
+								trips.add (new BusTrip (salesforce_id, startTime, endTime, uniqueID, driverName));
+							}
+							m_lastErrorMsg = "";
+							dataHandler.setTodaysTrips (trips);
+							sfrp.responseReceived("");
+						}
+						catch (IOException e) 
+						{
+							Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
+							m_lastErrorMsg = e.toString();
+						} 
+						catch (JSONException e) 
+						{
+							Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
+							m_lastErrorMsg = e.toString();
+						}
 					}
-					m_lastErrorMsg = "";
-					Log.v(DEBUG_TAG, "End getTodaysBusTrips");
-					return trips;
-				}
-				else
-				{
-					m_lastErrorMsg = "Failed to process Http call";
-					return null;
-				}
-			} 
-			catch (IOException e) 
-			{
-				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return null;
-			} 
-			catch (JSONException e) 
-			{
-				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return null;
+					
+					@Override
+					public void onError(Exception e) {
+						Log.v(DEBUG_TAG, "getTodaysBusTrips not logged in");
+						m_lastErrorMsg = "Not logged In";
+					}
+				});
 			}
+			catch (UnsupportedEncodingException e) 
+			{
+				Log.v(DEBUG_TAG, "addOdometerReadingToSelectedBus " + e.getMessage());
+				return false;
+			}
+			return true;
 		}
-		else
-		{
-			Log.v(DEBUG_TAG, "getTodaysBusTrips not logged in");
-			m_lastErrorMsg = "Not logged In";
-			return null;
-		}
+		return false;
 	}
 
 	public List<Passenger> getPassengerList(LocalDataHandler dataHandler, String busTripID) 

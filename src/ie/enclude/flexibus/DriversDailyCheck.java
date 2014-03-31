@@ -52,31 +52,25 @@ public class DriversDailyCheck  extends ListActivity
 		}
     }
     
-	public class SalesforceLoadDailyCheckListTask extends AsyncTask<FlexibusApp, Void, String> 
+	public class SalesforceLoadDailyCheckListTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
 		{
-			String result = gs[0].getDataHandler().localLogin();
-			if (gs[0].LoggedIn())
+			gs[0].getDataHandler().localLogin();
+			checkItems = gs[0].getDataHandler().getFieldList("Bus_Startup_CheckList__c", this);
+			if (checkItems != null)
 			{
-				checkItems = gs[0].getDataHandler().getFieldList("Bus_Startup_CheckList__c");
-				if (checkItems != null)
-				{
-					return "";
-				}
-				else
-				{
-					return gs[0].getDataHandler().getLastError();
-				}
+				return "";
 			}
 			else
 			{
-				return result;
+				return gs[0].getDataHandler().getLastError();
 			}
 		}
 
-		protected void onPostExecute(String result) 
+		@Override
+		public void responseReceived(String result)
 		{
 	        if (m_progress != null)
 	        {
@@ -91,6 +85,7 @@ public class DriversDailyCheck  extends ListActivity
 			else
 			{
 				final FlexibusApp gs = (FlexibusApp) getApplication();
+				checkItems = gs.getDataHandler().getFieldList("Bus_Startup_CheckList__c", this);
 				if (checkItems != null)
 				{
 					prepareListView();

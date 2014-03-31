@@ -8,15 +8,11 @@ import com.sforce.android.soap.partner.fault.ExceptionCode;
 */
 import com.salesforce.androidsdk.app.SalesforceSDKManager;
 import com.salesforce.androidsdk.rest.RestClient;
-import com.salesforce.androidsdk.rest.RestClient.AsyncRequestCallback;
-import com.salesforce.androidsdk.rest.RestRequest;
-import com.salesforce.androidsdk.rest.RestResponse;
 import com.salesforce.androidsdk.ui.sfnative.SalesforceActivity;
 
 import ie.enclude.salesforce.operation.DataHandleFactory;
 import ie.enclude.flexibus.R;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -44,8 +40,6 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
-
-import ie.enclude.salesforce.util.StaticInformation;
 
 public class FlexibusActivity extends SalesforceActivity implements SalesforceResponseInterface
 {
@@ -158,7 +152,11 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
     		FlexibusApp gs = (FlexibusApp) getApplication();
 	     	gs.setSavedBusState (busName, savedOdoReading);
 //	     	new SalesforceInitialiseBusTask().execute(gs);
-	     	gs.getDataHandler().initialiseSelectedBus(gs.getSavedBusName(), gs.getSavedBusOdoReading(), this);
+	     	if (gs.getDataHandler().initialiseSelectedBus(gs.getSavedBusName(), gs.getSavedBusOdoReading(), this) == false)
+	     	{
+	     		m_progress.dismiss();
+	     		m_progress = null;
+	     	}
     	}
 	}
 
@@ -186,10 +184,10 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 	@Override
 	public void onResume(RestClient client) {
         // Keeping reference to rest client
-		FlexibusApp gs = (FlexibusApp) getApplication();
-		gs.client = client; 
+		FlexibusApp.client = client; 
+        RetrievePersistantState();
 
-   		updateCurrentBusStatus();
+//   		updateCurrentBusStatus();
 	}
 
 	@Override 
@@ -601,16 +599,17 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
     	updateCurrentBusStatus();
 	}
 	
-	public class SalesforceSendChecklistTask extends AsyncTask<FlexibusApp, Void, String> 
+	public class SalesforceSendChecklistTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
 		{
 			gs[0].getDataHandler().localLogin();
-			return gs[0].getDataHandler().sendStartupCheckListToSalesforce();
+			return gs[0].getDataHandler().sendStartupCheckListToSalesforce(this);
 		}
 
-		protected void onPostExecute(String result) 
+		@Override
+		public void responseReceived(String result)
 		{
 	        if (m_progress != null)
 	        {
@@ -624,13 +623,13 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 
 	}
 
-	public class SalesforceInitialiseBusTask extends AsyncTask<FlexibusApp, Void, String> 
+	public class SalesforceInitialiseBusTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
 		{
 			gs[0].getDataHandler().localLogin();
-			if (gs[0].getDataHandler().initialiseSelectedBus(gs[0].getSavedBusName(), gs[0].getSavedBusOdoReading()))
+			if (gs[0].getDataHandler().initialiseSelectedBus(gs[0].getSavedBusName(), gs[0].getSavedBusOdoReading(), this))
 			{
 				return "";
 			}
@@ -640,7 +639,9 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 			}
 		}
 
-		protected void onPostExecute(String result) 
+		@Override
+		public void responseReceived(String result)
+		// if result is blank, then the selected bus has been updated in the LocalDataHandler.setOneBusDetails
 		{
 	        if (m_progress != null)
 	        {
@@ -648,6 +649,7 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 				m_progress = null;
 	        }
 	        mDisableScreenRotation=false;
+
 			if (!result.equals(""))
 			{
 				Toast.makeText(FlexibusActivity.this, result, Toast.LENGTH_SHORT).show();
