@@ -165,38 +165,17 @@ public class PassengerList extends ListActivity
 				{
 					gs[0].getDataHandler().localLogin();
 					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
-					// TODO this will return null if it has to call out - so do the rest of the work in responseReceived
+					// this will return null if it has to call out - so do the rest of the work in responseReceived
 					if (busTrips != null)
 					{
-						db.InitialiseDatabase(gs[0].getCurrentBusName());
-						for (BusTrip trip: busTrips)
-						{
-							db.insertBusTrip(trip);
-							passengers = gs[0].getDataHandler().getPassengerList(trip.salesforce_ID);
-							if (passengers != null)
-							{
-								for (Passenger pass: passengers)
-								{
-									db.insertPassenger(pass);
-								}
-							}
-						}
+						processTrips ();
 					}
 					else
 					{
 						return gs[0].getDataHandler().getLastError();
 					}
 				}
-				passengers = db.getTodaysPassengers(gs[0].getCurrentBusTripID());
-				if (passengers != null)
-				{
-					String[] passengerNumbers = db.getPassengerNumbers(db.getCurrentBusTrip());
-					if (passengerNumbers != null)
-					{
-						freePassengers = Integer.parseInt(passengerNumbers[0]);
-						farePayingPassengers = Integer.parseInt(passengerNumbers[1]);
-					}
-				}
+				processPassengers ();
 				return "";
 			}
 			catch (Exception e)
@@ -222,6 +201,8 @@ public class PassengerList extends ListActivity
 			}
 			else
 			{
+				processTrips ();
+				processPassengers (); // TODO consider a way of refreshing the list of passengers
 				if (passengers != null)
 				{
 					prepareListView();
@@ -241,6 +222,64 @@ public class PassengerList extends ListActivity
 		}
 	}
 
+    public void processTrips ()
+    {
+		FlexibusApp gs = (FlexibusApp) getApplication();
+		DBAdapter db = gs.getDatabase();
+    	db.InitialiseDatabase(gs.getCurrentBusName());
+    	busTrips = gs.getDataHandler().getTodaysBusTrips(null);
+    	if (busTrips != null)
+    	{
+			for (BusTrip trip: busTrips)
+			{
+				db.insertBusTrip(trip);
+				passengers = gs.getDataHandler().getPassengerList(trip.salesforce_ID);
+				if (passengers != null)
+				{
+					for (Passenger pass: passengers)
+					{
+						db.insertPassenger(pass);
+					}
+				}
+			}
+    	}
+    	else
+    	{
+			String errormsg = gs.getDataHandler().getLastError(); 
+			if (errormsg == null || errormsg.equals(""))
+			{
+				errormsg = "No bustrips today";
+			}
+			Toast.makeText(getApplicationContext(), errormsg, Toast.LENGTH_SHORT).show();
+    	}
+    		
+    }
+
+    public void processPassengers ()
+    {
+		FlexibusApp gs = (FlexibusApp) getApplication();
+		DBAdapter db = gs.getDatabase();
+		passengers = db.getTodaysPassengers(gs.getCurrentBusTripID());
+		if (passengers != null)
+		{
+			String[] passengerNumbers = db.getPassengerNumbers(db.getCurrentBusTrip());
+			if (passengerNumbers != null)
+			{
+				freePassengers = Integer.parseInt(passengerNumbers[0]);
+				farePayingPassengers = Integer.parseInt(passengerNumbers[1]);
+			}
+		}
+		else
+		{
+			String errormsg = gs.getDataHandler().getLastError(); 
+			if (errormsg == null || errormsg.equals(""))
+			{
+				errormsg = "No passengers today";
+			}
+			Toast.makeText(getApplicationContext(), errormsg, Toast.LENGTH_SHORT).show();
+		}
+   }
+    
     public String getNote (Passenger thisPassenger)
     {
     	String note="";  

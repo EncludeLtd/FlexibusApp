@@ -603,6 +603,7 @@ public class ApexApiCaller
 
 	public boolean getTodaysBusTrips(final LocalDataHandler dataHandler, final SalesforceResponseInterface sfrp) 
 	{
+		m_lastErrorMsg = "";
 		if (FlexibusApp.client != null)
 		{
 			RestClient client = FlexibusApp.client;

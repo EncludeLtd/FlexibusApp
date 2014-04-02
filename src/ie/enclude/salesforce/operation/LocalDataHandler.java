@@ -305,7 +305,7 @@ public class LocalDataHandler
 		if (isSameDay (dayNow, dayTripsRetrieved)) return todaysTrips;
 		else 
 		{
-			bind.getTodaysBusTrips(this, sfrp);
+			if (sfrp != null) bind.getTodaysBusTrips(this, sfrp); // otherwise just using this call to get todaysTrips
 			return null;
 		}
 	}
