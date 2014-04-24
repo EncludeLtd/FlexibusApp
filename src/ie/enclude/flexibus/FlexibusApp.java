@@ -44,7 +44,7 @@ import com.salesforce.androidsdk.rest.RestClient;
 public class FlexibusApp extends Application 
 {
     static public RestClient client;
-	private DBAdapter db=null;
+    static public DBAdapter db=null;
 	private DataHandleFactory daf=null;
 	private String m_AlertDialogMessage="";
 	private String m_savedBusName=CONSTANTS.UNDEFINED_BUS_NAME;
@@ -56,8 +56,6 @@ public class FlexibusApp extends Application
 	private int currentFarePayingPassengers;
 	private int currentFreePassengers;
 	
-	List<BusTrip>todaysBusTrips=null;
-
 	@Override
 	public void onCreate() {
 		super.onCreate();
@@ -138,11 +136,6 @@ public class FlexibusApp extends Application
 		m_savedFuelPurchased  = fuelPurchased;
 	}
 
-	public List<BusTrip> getCurrentServiceList()
-	{
-		return todaysBusTrips;
-	}
-	
 	public List<Passenger> getCurrentPassengerList() 
 	{
 		if (currentBusTripID != null && currentTripPassengers!= null && db.checkBusTripIDIsCurrent(currentBusTripID))

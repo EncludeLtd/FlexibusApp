@@ -92,8 +92,9 @@ public class TodaysBusServiceList extends ListActivity
     	}
     	
 		FlexibusApp gs = (FlexibusApp) getApplication();
-		busTrips = gs.getCurrentServiceList();
-		if (busTrips == null)
+		// busTrips = gs.getCurrentServiceList();
+		DBAdapter db = gs.getDatabase();
+		if (!db.ContainsTodaysTrips(gs.getCurrentBusName()))
 		{
 			m_progress = ProgressDialog.show(this, "Loading...", "Loading today's services from Salesforce");
     		mDisableScreenRotation = true;
@@ -101,6 +102,7 @@ public class TodaysBusServiceList extends ListActivity
 		}
 		else
 		{
+			busTrips = db.getTodaysTrips(gs.getCurrentBusName());
 			prepareListView();
 		}
     }
@@ -110,7 +112,6 @@ public class TodaysBusServiceList extends ListActivity
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
 		{
-			List<Passenger>passengers;
 			DBAdapter db = gs[0].getDatabase();
 			try
 			{
@@ -119,6 +120,7 @@ public class TodaysBusServiceList extends ListActivity
 				{
 					//db.InitialiseDatabase(); // REMOVE AFTER TESTING
 				}
+				Log.v(DEBUG_TAG, "TodaysBusServiceList ContainsTodaysTrips about to check");
 				if (!db.ContainsTodaysTrips(gs[0].getCurrentBusName()))
 				{
 					String result = gs[0].getDataHandler().localLogin();
@@ -129,21 +131,7 @@ public class TodaysBusServiceList extends ListActivity
 						// TODO this will return null if it has to call out - so do the rest of the work in responseReceived
 						if (busTrips != null)
 						{
-							Log.v(DEBUG_TAG, "Bus trips found");
-							db.InitialiseDatabase(gs[0].getCurrentBusName());
-							for (BusTrip trip: busTrips)
-							{
-								Log.v(DEBUG_TAG, "Inserting Bus trips");
-								db.insertBusTrip(trip);
-								passengers = gs[0].getDataHandler().getPassengerList(trip.salesforce_ID);
-								if (passengers != null)
-								{
-									for (Passenger pass: passengers)
-									{
-										db.insertPassenger(pass);
-									}
-								}
-							}
+							responseReceived ("");
 						}
 						else
 						{
@@ -152,12 +140,13 @@ public class TodaysBusServiceList extends ListActivity
 					}
 					else
 					{
-						return result;
+						return result; // not logged in for some reason
 					}
 				}
 				else
 				{
 					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
+					responseReceived ("");
 				}
 				return "";
 			}
@@ -165,6 +154,29 @@ public class TodaysBusServiceList extends ListActivity
 			{
 				Log.v(DEBUG_TAG, "doInBackground in SalesforceLoadProviderSheetTask " + e.getMessage());
 				return e.getMessage();
+			}
+		}
+
+		public void addPassengersToDatabase ()
+		{
+			Log.v(DEBUG_TAG, "Bus trips found");
+			List<Passenger>passengers;
+			FlexibusApp gs = (FlexibusApp) getApplication();
+			DBAdapter db = gs.getDatabase();
+			db.open();
+			db.InitialiseDatabase(gs.getCurrentBusName());
+			for (BusTrip trip: busTrips)
+			{
+				Log.v(DEBUG_TAG, "Inserting Bus trips");
+				db.insertBusTrip(trip);
+				passengers = gs.getDataHandler().getPassengerList(trip.salesforce_ID);
+				if (passengers != null)
+				{
+					for (Passenger pass: passengers)
+					{
+						db.insertPassenger(pass);
+					}
+				}
 			}
 		}
 
@@ -186,7 +198,8 @@ public class TodaysBusServiceList extends ListActivity
 			{
 				if (busTrips != null)
 				{
-					prepareListView();
+//					addPassengersToDatabase ();
+//					prepareListView(); // can't
 				}
 				else
 				{

@@ -637,6 +637,8 @@ public class ApexApiCaller
 							}
 							m_lastErrorMsg = "";
 							dataHandler.setTodaysTrips (trips);
+							
+							getPassengers (trips);
 							sfrp.responseReceived("");
 						}
 						catch (IOException e) 
@@ -660,7 +662,7 @@ public class ApexApiCaller
 			}
 			catch (UnsupportedEncodingException e) 
 			{
-				Log.v(DEBUG_TAG, "addOdometerReadingToSelectedBus " + e.getMessage());
+				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
 				return false;
 			}
 			return true;
@@ -668,20 +670,114 @@ public class ApexApiCaller
 		return false;
 	}
 
+	public void getPassengers (List<BusTrip> trips)
+	{
+		RestClient client = FlexibusApp.client;
+		
+		for (BusTrip oneTrip: trips)
+		{
+			String busTripID = oneTrip.salesforce_ID;
+		
+			String soqlQuery = "Select Id, Name, HomePhone, MobilePhone, OtherStreet, OtherCity, Note__c, Free_Travel_Pass_Number__c from Contact "
+				+ "where id in (select Passenger__c from Passenger_Trip__c where Bus_Trip__c = '" + busTripID + "')";
+		
+			try
+			{
+				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
+				client.sendAsync(restRequest, new AsyncRequestCallback() {
+						@Override
+						public void onSuccess(RestRequest request, RestResponse result)	
+						{
+							try
+							{
+								JSONArray records = result.asJSONObject().getJSONArray("records");
+								int count = records.length();
+								
+								String path = request.getPath();
+								Integer start = path.indexOf("Bus_Trip__c", 1) + 19;
+								String busTripID = path.substring(start, start+18);
+								
+								DBAdapter db = FlexibusApp.db;
+								for (int i=0;i<count;i++) 
+								{
+									JSONObject record = (JSONObject) records.get(i);
+									String salesforce_id = record.getString("Id");
+									String name = record.getString("Name");
+									String phone1 = record.getString("HomePhone");
+									String phone2 = record.getString("MobilePhone");
+									String street = record.getString("OtherStreet");
+									String town = record.getString("OtherCity");
+									String note = record.getString ("Note__c");
+									String ftp = record.getString("Free_Travel_Pass_Number__c");
+									db.insertPassenger(new Passenger (salesforce_id, busTripID, name, phone1, phone2, street, town, note, ftp, 0));
+								}
+							}
+							catch (IOException e) 
+							{
+								Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
+								m_lastErrorMsg = e.toString();
+							} 
+							catch (JSONException e) 
+							{
+								Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
+								m_lastErrorMsg = e.toString();
+							}
+						}
+						@Override
+						public void onError(Exception e) {
+							Log.v(DEBUG_TAG, "getTodaysBusTrips not logged in");
+							m_lastErrorMsg = "Not logged In";
+						}
+					});
+			}
+			catch (UnsupportedEncodingException e) 
+			{
+				Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
+			}
+		}
+	}
+	
 	public List<Passenger> getPassengerList(LocalDataHandler dataHandler, String busTripID) 
 	{
-		OAuthTokens myTokens = getAccessTokens();
-		if (myTokens != null)
+		DBAdapter db = FlexibusApp.db;
+		return db.getAllPassengers (busTripID);
+	/*
+		if (FlexibusApp.client != null)
 		{
-			Log.v(DEBUG_TAG, "Start getPassengerList");
-			String url = myTokens.get_instance_url() + "/services/data/v20.0/query/?q=";
+			RestClient client = FlexibusApp.client;
 			
 			String soqlQuery = "Select Id, Name, HomePhone, MobilePhone, OtherStreet, OtherCity, Note__c, Free_Travel_Pass_Number__c from Contact "
 					+ "where id in (select Passenger__c from Passenger_Trip__c where Bus_Trip__c = '" + busTripID + "')";
 			
 			try
 			{
-				url += URLEncoder.encode(soqlQuery, "UTF-8");
+				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
+				
+				client.sendAsync(restRequest, new AsyncRequestCallback() {
+					@Override
+					public void onSuccess(RestRequest request, RestResponse result) {
+						try 
+						{
+							JSONArray records = result.asJSONObject().getJSONArray("records");
+							int count = records.length();
+								
+							List<Passenger> passengers = new ArrayList<Passenger>(count);
+								
+							for (int i=0;i<count;i++) 
+							{
+								JSONObject record = (JSONObject) records.get(i);
+								String salesforce_id = record.getString("Id");
+								String name = record.getString("Name");
+								String phone1 = record.getString("HomePhone");
+								String phone2 = record.getString("MobilePhone");
+								String street = record.getString("OtherStreet");
+								String town = record.getString("OtherCity");
+								String note = record.getString ("Note__c");
+								String ftp = record.getString("Free_Travel_Pass_Number__c");
+								passengers.add (new Passenger (salesforce_id, busTripID, name, phone1, phone2, street, town, note, ftp, 0));
+							}
+							m_lastErrorMsg = "";
+						}
 			}
 			catch(UnsupportedEncodingException e)
 			{
@@ -689,37 +785,6 @@ public class ApexApiCaller
 				return null;
 			}
 			
-			HttpGet getRequest = new HttpGet(url);
-			getRequest.addHeader("Authorization", "OAuth " + myTokens.get_access_token());
-			
-			try 
-			{
-				Log.v(DEBUG_TAG, "HTTP call in getPassengerList");
-				String result = ProcessHttpCall (getRequest);
-				if (!result.equals(""))
-				{
-					JSONObject object = (JSONObject) new JSONTokener(result).nextValue();
-					JSONArray records = object.getJSONArray("records");
-					int count = object.getInt("totalSize");
-					
-					List<Passenger> passengers = new ArrayList<Passenger>(count);
-					
-					for (int i=0;i<count;i++) {
-						JSONObject record = (JSONObject) records.get(i);
-						String salesforce_id = record.getString("Id");
-						String name = record.getString("Name");
-						String phone1 = record.getString("HomePhone");
-						String phone2 = record.getString("MobilePhone");
-						String street = record.getString("OtherStreet");
-						String town = record.getString("OtherCity");
-						String note = record.getString ("Note__c");
-						String ftp = record.getString("Free_Travel_Pass_Number__c");
-						passengers.add (new Passenger (salesforce_id, busTripID, name, phone1, phone2, street, town, note, ftp, 0));
-					}
-					m_lastErrorMsg = "";
-					Log.v(DEBUG_TAG, "End getPassengerList");
-					return passengers;
-				}
 				else
 				{
 					m_lastErrorMsg = "Failed to process Http call";
@@ -745,6 +810,7 @@ public class ApexApiCaller
 			m_lastErrorMsg = "Not logged In";
 			return null;
 		}
+	*/
 	}
 
 	public JSONArray getPassengerTripRecords(String busTripIDs)

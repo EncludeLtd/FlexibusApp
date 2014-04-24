@@ -250,6 +250,7 @@ public class DBAdapter
 
 	public boolean ContainsTodaysTrips(String currentBusName) 
 	{
+		if (db == null) open (); 
 		try
 		{
 			Cursor dbDate = db.query(DATABASE_PROVIDER_SHEET_TABLE, new String[] {KEY_DATE},
@@ -541,6 +542,39 @@ public class DBAdapter
 		catch (SQLException e)
 		{
 			Log.v(DEBUG_TAG, "getPassengerNumbers " + e.getMessage());
+			return null;
+		}
+	}
+
+	public List<BusTrip> getTodaysTrips(String currentBusName) 
+	{
+		// TODO - this ignores the currentBusName
+		try
+		{
+			String whereClause = null; // KEY_SALESFORCE_ID + " = '" + busTripID + "'";
+			Cursor currentTrip = db.query(DATABASE_BUS_TRIP_TABLE, new String[] {KEY_SALESFORCE_ID, KEY_START_TIME, KEY_END_TIME, KEY_BUS_TRIP_UNIQUE_ID}, 
+					whereClause, null, null, null, KEY_START_TIME);
+			
+			if (currentTrip.moveToFirst())
+			{
+				List<BusTrip> todaysTrips = new ArrayList<BusTrip>(currentTrip.getCount());
+				do
+				{
+					todaysTrips.add(new BusTrip (currentTrip.getString(0), currentTrip.getString(1), currentTrip.getString(2), currentTrip.getString(3), ""));
+				} while (currentTrip.moveToNext());
+				currentTrip.close();
+
+				return todaysTrips;
+			}
+			else
+			{
+				currentTrip.close();
+				return null;
+			}
+		}
+		catch (SQLException e)
+		{
+			Log.v(DEBUG_TAG, "getTodaysPassengers " + e.getMessage());
 			return null;
 		}
 	}

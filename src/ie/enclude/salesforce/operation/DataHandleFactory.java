@@ -21,6 +21,7 @@ public class DataHandleFactory {
 	 * @param context */
 	public String localLogin() 
 	{
+		bLoggedIn = true;
 		return "Logged In";
 /*		
 		String result = "";

@@ -101,6 +101,7 @@ public class LocalDataHandler
 				if (buses[i].getString("Name") == busName)
 				{
 					m_selectedBus = buses[i];
+					return;
 				}
 			} 
 			catch (JSONException e) 
@@ -302,7 +303,7 @@ public class LocalDataHandler
 	public List<BusTrip> getTodaysBusTrips(SalesforceResponseInterface sfrp) 
 	{
 		Date dayNow = new Date();
-		if (isSameDay (dayNow, dayTripsRetrieved)) return todaysTrips;
+		if (todaysTrips != null && dayTripsRetrieved != null && isSameDay (dayNow, dayTripsRetrieved)) return todaysTrips;
 		else 
 		{
 			if (sfrp != null) bind.getTodaysBusTrips(this, sfrp); // otherwise just using this call to get todaysTrips

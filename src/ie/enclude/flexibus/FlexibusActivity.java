@@ -141,22 +141,25 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 
  	private void RetrievePersistantState() 
     {
-    	SharedPreferences persistanceData = getPreferences(MODE_PRIVATE);
-    	String busName = persistanceData.getString("LastBusName", CONSTANTS.UNDEFINED_BUS_NAME);
-    	if (!busName.equals(CONSTANTS.UNDEFINED_BUS_NAME))
+    	FlexibusApp gs = (FlexibusApp) getApplication();
+    	if (gs.getCurrentBusName() == CONSTANTS.UNDEFINED_BUS_NAME) // then at the start of the app - otherwise seems to be called every time a Rest call returns
     	{
-    		m_progress = ProgressDialog.show(this, "Starting...", "Loading previous state");
-    		mDisableScreenRotation = true;
-    	       
-    		String savedOdoReading = persistanceData.getString("LastBusOdoReading", "0");
-    		FlexibusApp gs = (FlexibusApp) getApplication();
-	     	gs.setSavedBusState (busName, savedOdoReading);
-//	     	new SalesforceInitialiseBusTask().execute(gs);
-	     	if (gs.getDataHandler().initialiseSelectedBus(gs.getSavedBusName(), gs.getSavedBusOdoReading(), this) == false)
-	     	{
-	     		m_progress.dismiss();
-	     		m_progress = null;
-	     	}
+	    	SharedPreferences persistanceData = getPreferences(MODE_PRIVATE);
+	    	String busName = persistanceData.getString("LastBusName", CONSTANTS.UNDEFINED_BUS_NAME);
+	    	if (!busName.equals(CONSTANTS.UNDEFINED_BUS_NAME))
+	    	{
+	    		m_progress = ProgressDialog.show(this, "Starting...", "Loading previous state");
+	    		mDisableScreenRotation = true;
+	    	       
+	    		String savedOdoReading = persistanceData.getString("LastBusOdoReading", "0");
+		     	gs.setSavedBusState (busName, savedOdoReading);
+	//	     	new SalesforceInitialiseBusTask().execute(gs);
+		     	if (gs.getDataHandler().initialiseSelectedBus(gs.getSavedBusName(), gs.getSavedBusOdoReading(), this) == false)
+		     	{
+		     		m_progress.dismiss();
+		     		m_progress = null;
+		     	}
+	    	}
     	}
 	}
 
