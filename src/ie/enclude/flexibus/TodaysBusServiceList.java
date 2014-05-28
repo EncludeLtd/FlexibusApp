@@ -157,6 +157,7 @@ public class TodaysBusServiceList extends ListActivity
 			}
 		}
 
+		// this routine seems to be pointless - the passenger list is already in the database
 		public void addPassengersToDatabase ()
 		{
 			Log.v(DEBUG_TAG, "Bus trips found");
@@ -199,7 +200,7 @@ public class TodaysBusServiceList extends ListActivity
 				if (busTrips != null)
 				{
 //					addPassengersToDatabase ();
-//					prepareListView(); // can't
+					prepareListView(); // can't
 				}
 				else
 				{

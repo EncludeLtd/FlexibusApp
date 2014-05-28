@@ -138,8 +138,12 @@ public class FlexibusApp extends Application
 
 	public List<Passenger> getCurrentPassengerList() 
 	{
-		if (currentBusTripID != null && currentTripPassengers!= null && db.checkBusTripIDIsCurrent(currentBusTripID))
+		if (currentBusTripID != null && db.checkBusTripIDIsCurrent(currentBusTripID))
 		{
+			if (currentTripPassengers == null)
+			{
+				currentTripPassengers = db.getTodaysPassengers(currentBusTripID);
+			}
 			return currentTripPassengers;
 		}
 		else

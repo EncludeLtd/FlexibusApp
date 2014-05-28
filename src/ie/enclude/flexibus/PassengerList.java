@@ -168,7 +168,7 @@ public class PassengerList extends ListActivity
 					// this will return null if it has to call out - so do the rest of the work in responseReceived
 					if (busTrips != null)
 					{
-						processTrips ();
+						// processTrips (); -- database already populated
 					}
 					else
 					{
@@ -201,7 +201,7 @@ public class PassengerList extends ListActivity
 			}
 			else
 			{
-				processTrips ();
+				// processTrips (); - trips and passengers are already in the database
 				processPassengers (); // TODO consider a way of refreshing the list of passengers
 				if (passengers != null)
 				{

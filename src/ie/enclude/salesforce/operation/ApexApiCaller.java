@@ -624,6 +624,10 @@ public class ApexApiCaller
 							JSONArray records = result.asJSONObject().getJSONArray("records");
 							int count = records.length();
 								
+							DBAdapter db = FlexibusApp.db;
+							db.open();
+							db.InitialiseDatabase(dataHandler.getCurrentBusName());
+
 							List<BusTrip> trips = new ArrayList<BusTrip>(count);
 								
 							for (int i=0;i<count;i++) {
@@ -633,7 +637,9 @@ public class ApexApiCaller
 								String startTime = record.getString("Estimated_Start_Time__c");
 								String endTime = record.getString("Estimated_End_Time__c");
 								String driverName = record.getString("Driver_name__c");
-								trips.add (new BusTrip (salesforce_id, startTime, endTime, uniqueID, driverName));
+								BusTrip oneTrip = new BusTrip (salesforce_id, startTime, endTime, uniqueID, driverName);
+								trips.add (oneTrip); // TODO - this is overkill either use the database or the variables
+								db.insertBusTrip(oneTrip);
 							}
 							m_lastErrorMsg = "";
 							dataHandler.setTodaysTrips (trips);

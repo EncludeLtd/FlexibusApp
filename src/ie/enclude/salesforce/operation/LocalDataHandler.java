@@ -38,6 +38,7 @@ public class LocalDataHandler
 	private String startupCheckListFaultReport;
 	private List<BusTrip> todaysTrips;
 	private Date dayTripsRetrieved;
+	private String busforTodaysTrips;
 	
 	public LocalDataHandler(FlexibusActivity mainActivity) 
 	{
@@ -303,7 +304,10 @@ public class LocalDataHandler
 	public List<BusTrip> getTodaysBusTrips(SalesforceResponseInterface sfrp) 
 	{
 		Date dayNow = new Date();
-		if (todaysTrips != null && dayTripsRetrieved != null && isSameDay (dayNow, dayTripsRetrieved)) return todaysTrips;
+		if (todaysTrips != null && dayTripsRetrieved != null && isSameDay (dayNow, dayTripsRetrieved) && busforTodaysTrips == getCurrentBusID()) 
+		{
+			return todaysTrips;
+		}
 		else 
 		{
 			if (sfrp != null) bind.getTodaysBusTrips(this, sfrp); // otherwise just using this call to get todaysTrips
@@ -325,6 +329,7 @@ public class LocalDataHandler
 	{
 		 todaysTrips = trips;
 		 dayTripsRetrieved = new Date();
+		 busforTodaysTrips = getCurrentBusID();
 	}
 
 	public List<Passenger> getPassengerList(String busTripID) {
