@@ -156,6 +156,13 @@ public class TodaysBusServiceList extends ListActivity
 				return e.getMessage();
 			}
 		}
+		
+		// this task run on the UI thread
+		protected void onPostExecute (String result)
+		{
+			// TODO check the result
+			prepareListView();
+		}
 
 		// this routine seems to be pointless - the passenger list is already in the database
 		public void addPassengersToDatabase ()

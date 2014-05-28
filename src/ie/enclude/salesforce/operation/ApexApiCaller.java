@@ -645,7 +645,7 @@ public class ApexApiCaller
 							dataHandler.setTodaysTrips (trips);
 							
 							getPassengers (trips);
-							sfrp.responseReceived("");
+							sfrp.responseReceived("Bus trips got");
 						}
 						catch (IOException e) 
 						{

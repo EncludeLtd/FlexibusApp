@@ -185,6 +185,14 @@ public class PassengerList extends ListActivity
 			}
 		}
 
+		// this task run on the UI thread
+		protected void onPostExecute (String result)
+		{
+			// TODO check the result
+			processPassengers();
+			prepareListView();
+		}
+
 		@Override
 		public void responseReceived(String result)
 		{
@@ -272,6 +280,11 @@ public class PassengerList extends ListActivity
 		else
 		{
 			String errormsg = gs.getDataHandler().getLastError(); 
+			if (m_progress != null)
+	        {
+	        	m_progress.dismiss();
+				m_progress = null;
+	        }
 			if (errormsg == null || errormsg.equals(""))
 			{
 				errormsg = "No passengers today";
