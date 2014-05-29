@@ -148,7 +148,7 @@ public class PassengerList extends ListActivity
 		return true;
 	}
 	
-    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
+    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> 
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
@@ -164,7 +164,7 @@ public class PassengerList extends ListActivity
 				if (!db.ContainsTodaysTrips(gs[0].getCurrentBusName()))
 				{
 					gs[0].getDataHandler().localLogin();
-					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
+					busTrips = gs[0].getDataHandler().getTodaysBusTrips();
 					// this will return null if it has to call out - so do the rest of the work in responseReceived
 					if (busTrips != null)
 					{
@@ -185,16 +185,9 @@ public class PassengerList extends ListActivity
 			}
 		}
 
-		// this task run on the UI thread
-		protected void onPostExecute (String result)
-		{
-			// TODO check the result
-			processPassengers();
-			prepareListView();
-		}
-
 		@Override
-		public void responseReceived(String result)
+		// this task runs on the UI thread
+		protected void onPostExecute (String result)
 		{
 	        if (m_progress != null)
 	        {
@@ -235,7 +228,7 @@ public class PassengerList extends ListActivity
 		FlexibusApp gs = (FlexibusApp) getApplication();
 		DBAdapter db = gs.getDatabase();
     	db.InitialiseDatabase(gs.getCurrentBusName());
-    	busTrips = gs.getDataHandler().getTodaysBusTrips(null);
+    	busTrips = gs.getDataHandler().getTodaysBusTrips();
     	if (busTrips != null)
     	{
 			for (BusTrip trip: busTrips)

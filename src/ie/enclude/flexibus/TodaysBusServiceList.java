@@ -107,7 +107,7 @@ public class TodaysBusServiceList extends ListActivity
 		}
     }
     
-    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> implements SalesforceResponseInterface
+    public class SalesforceLoadProviderSheetTask extends AsyncTask<FlexibusApp, Void, String> 
 	{
 		@Override
 		protected String doInBackground(FlexibusApp... gs) 
@@ -127,16 +127,8 @@ public class TodaysBusServiceList extends ListActivity
 					if (gs[0].LoggedIn())
 					{
 						Log.v(DEBUG_TAG, "TodaysBusServiceList doInBackground Logged In");
-						busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
-						// TODO this will return null if it has to call out - so do the rest of the work in responseReceived
-						if (busTrips != null)
-						{
-							responseReceived ("");
-						}
-						else
-						{
-							return gs[0].getDataHandler().getLastError();
-						}
+						busTrips = gs[0].getDataHandler().getTodaysBusTrips();
+						return gs[0].getDataHandler().getLastError();
 					}
 					else
 					{
@@ -145,8 +137,7 @@ public class TodaysBusServiceList extends ListActivity
 				}
 				else
 				{
-					busTrips = gs[0].getDataHandler().getTodaysBusTrips(this);
-					responseReceived ("");
+					busTrips = gs[0].getDataHandler().getTodaysBusTrips();
 				}
 				return "";
 			}
@@ -157,13 +148,6 @@ public class TodaysBusServiceList extends ListActivity
 			}
 		}
 		
-		// this task run on the UI thread
-		protected void onPostExecute (String result)
-		{
-			// TODO check the result
-			prepareListView();
-		}
-
 		// this routine seems to be pointless - the passenger list is already in the database
 		public void addPassengersToDatabase ()
 		{
@@ -189,7 +173,8 @@ public class TodaysBusServiceList extends ListActivity
 		}
 
 		@Override
-		public void responseReceived(String result)
+		// this task runs on the UI thread
+		protected void onPostExecute (String result)
 		{
 	        if (m_progress != null)
 	        {
@@ -207,7 +192,7 @@ public class TodaysBusServiceList extends ListActivity
 				if (busTrips != null)
 				{
 //					addPassengersToDatabase ();
-					prepareListView(); // can't
+					prepareListView(); 
 				}
 				else
 				{

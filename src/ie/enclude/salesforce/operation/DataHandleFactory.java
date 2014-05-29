@@ -89,8 +89,8 @@ public class DataHandleFactory {
 		return ldh.getLastError();
 	}
 
-	public List<String> getFieldList(String objectName, SalesforceResponseInterface sfrp) {
-		return ldh.getFieldList(objectName, sfrp);
+	public List<String> getFieldList(String objectName) {
+		return ldh.getFieldList(objectName);
 	}
 
 	public String[] getPickList(String pickListtName) {
@@ -119,8 +119,8 @@ public class DataHandleFactory {
 		return ldh.recordFuelPurchased(gs, sfrp);
 	}
 
-	public List<BusTrip> getTodaysBusTrips(SalesforceResponseInterface sfrp) {
-		return ldh.getTodaysBusTrips(sfrp);
+	public List<BusTrip> getTodaysBusTrips() {
+		return ldh.getTodaysBusTrips();
 	}
 
 	public List<Passenger> getPassengerList(String busTripID) {

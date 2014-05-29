@@ -232,11 +232,11 @@ public class LocalDataHandler
 		return bind.getLastError();
 	}
 
-	public List<String> getFieldList(String objectName, SalesforceResponseInterface sfrp) 
+	public List<String> getFieldList(String objectName) 
 	{
 		if (startupCheckLabels == null)
 		{
-			startupCheckLabels = bind.getFieldList(this, objectName, sfrp);
+			startupCheckLabels = bind.getFieldList(this, objectName);
 		}
 		return startupCheckLabels;
 	}
@@ -301,7 +301,7 @@ public class LocalDataHandler
 		return bind.recordFuelPurchased(this, gs, sfrp);
 	}
 
-	public List<BusTrip> getTodaysBusTrips(SalesforceResponseInterface sfrp) 
+	public List<BusTrip> getTodaysBusTrips() 
 	{
 		Date dayNow = new Date();
 		if (todaysTrips != null && dayTripsRetrieved != null && isSameDay (dayNow, dayTripsRetrieved) && busforTodaysTrips == getCurrentBusID()) 
@@ -310,8 +310,7 @@ public class LocalDataHandler
 		}
 		else 
 		{
-			if (sfrp != null) bind.getTodaysBusTrips(this, sfrp); // otherwise just using this call to get todaysTrips
-			return null;
+			return bind.getTodaysBusTrips(this); 
 		}
 	}
 
@@ -337,6 +336,6 @@ public class LocalDataHandler
 	}
 
 	public String sendTripReports(DBAdapter database) {
-		return bind.sendTripReportsUsingSoap(this, database);
+		return bind.sendTripReports(this, database);
 	}
 }

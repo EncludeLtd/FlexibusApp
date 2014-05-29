@@ -50,6 +50,7 @@ import ie.enclude.flexibus.SalesforceResponseInterface;
 import ie.enclude.flexibus.database.DBAdapter;
 import ie.enclude.flexibus.util.BusTrip;
 import ie.enclude.flexibus.util.Passenger;
+import ie.enclude.flexibus.util.PassengerTrip;
 import ie.enclude.salesforce.util.OAuthTokens;
 
 import ie.enclude.salesforce.util.StaticInformation;
@@ -144,7 +145,7 @@ public class ApexApiCaller
 	
 	public boolean getBuses(final LocalDataHandler dataHandler, final SalesforceResponseInterface sfrp) 
 	{	
-//		OAuthTokens myTokens = getAccessTokens();
+//		TODO - working here
 		if (FlexibusApp.client != null)
 		{
 			RestClient client = FlexibusApp.client;
@@ -365,7 +366,7 @@ public class ApexApiCaller
 		}
 	}
 	
-	public List<String> getFieldList (final LocalDataHandler dataHandler, String objectName, final SalesforceResponseInterface sfrp) 
+	public List<String> getFieldList (final LocalDataHandler dataHandler, String objectName) 
 	{
 		if (FlexibusApp.client != null)
 		{
@@ -416,12 +417,10 @@ public class ApexApiCaller
 							m_lastErrorMsg = "";
 							Collections.sort(labels, String.CASE_INSENSITIVE_ORDER);
 							dataHandler.setStartupCheckLabels (labels);
-							sfrp.responseReceived ("");
 						}
 						else
 						{
 							m_lastErrorMsg = "No items in this checklist";
-							sfrp.responseReceived (m_lastErrorMsg);
 						}
 					}
 					catch (JSONException e) 
@@ -437,7 +436,6 @@ public class ApexApiCaller
 					@Override
 					public void onError(Exception e) {
 						m_lastErrorMsg = "Failed to process Http call";
-						sfrp.responseReceived (m_lastErrorMsg);
 					}
 				});
 				m_lastErrorMsg = "";
@@ -467,7 +465,7 @@ public class ApexApiCaller
 			
 			try 
 			{
-				List<String> labels = dataHandler.getFieldList("Bus_Startup_CheckList__c", sfrp);
+				List<String> labels = dataHandler.getFieldList("Bus_Startup_CheckList__c");
 				for (int i=0; i<labels.size(); i++)
 				{
 					String fieldlabel = labels.get(i);
@@ -601,7 +599,7 @@ public class ApexApiCaller
 		return "";
 	}
 
-	public boolean getTodaysBusTrips(final LocalDataHandler dataHandler, final SalesforceResponseInterface sfrp) 
+	public List<BusTrip> getTodaysBusTrips(final LocalDataHandler dataHandler) 
 	{
 		m_lastErrorMsg = "";
 		if (FlexibusApp.client != null)
@@ -616,67 +614,67 @@ public class ApexApiCaller
 			{
 				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
 	
-				client.sendAsync(restRequest, new AsyncRequestCallback() {
-					@Override
-					public void onSuccess(RestRequest request, RestResponse result) {
-						try 
-						{
-							JSONArray records = result.asJSONObject().getJSONArray("records");
-							int count = records.length();
+				RestResponse result = client.sendSync(restRequest);
+				try 
+				{
+					JSONArray records = result.asJSONObject().getJSONArray("records");
+					int count = records.length();
 								
-							DBAdapter db = FlexibusApp.db;
-							db.open();
-							db.InitialiseDatabase(dataHandler.getCurrentBusName());
+					DBAdapter db = FlexibusApp.db;
+					db.open();
+					db.InitialiseDatabase(dataHandler.getCurrentBusName());
 
-							List<BusTrip> trips = new ArrayList<BusTrip>(count);
+					List<BusTrip> trips = new ArrayList<BusTrip>(count);
 								
-							for (int i=0;i<count;i++) {
-								JSONObject record = (JSONObject) records.get(i);
-								String salesforce_id = record.getString("Id");
-								String uniqueID = record.getString("Bus_Trip_Unique_ID__c");
-								String startTime = record.getString("Estimated_Start_Time__c");
-								String endTime = record.getString("Estimated_End_Time__c");
-								String driverName = record.getString("Driver_name__c");
-								BusTrip oneTrip = new BusTrip (salesforce_id, startTime, endTime, uniqueID, driverName);
-								trips.add (oneTrip); // TODO - this is overkill either use the database or the variables
-								db.insertBusTrip(oneTrip);
-							}
-							m_lastErrorMsg = "";
-							dataHandler.setTodaysTrips (trips);
+					for (int i=0;i<count;i++) {
+						JSONObject record = (JSONObject) records.get(i);
+						String salesforce_id = record.getString("Id");
+						String uniqueID = record.getString("Bus_Trip_Unique_ID__c");
+						String startTime = record.getString("Estimated_Start_Time__c");
+						String endTime = record.getString("Estimated_End_Time__c");
+						String driverName = record.getString("Driver_name__c");
+						BusTrip oneTrip = new BusTrip (salesforce_id, startTime, endTime, uniqueID, driverName);
+						trips.add (oneTrip); // TODO - this is overkill either use the database or the variables
+						db.insertBusTrip(oneTrip);
+					}
+					m_lastErrorMsg = "";
+					dataHandler.setTodaysTrips (trips);
 							
-							getPassengers (trips);
-							sfrp.responseReceived("Bus trips got");
-						}
-						catch (IOException e) 
-						{
-							Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
-							m_lastErrorMsg = e.toString();
-						} 
-						catch (JSONException e) 
-						{
-							Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
-							m_lastErrorMsg = e.toString();
-						}
+					if (getPassengers (trips))
+					{
+						return trips;
 					}
-					
-					@Override
-					public void onError(Exception e) {
-						Log.v(DEBUG_TAG, "getTodaysBusTrips not logged in");
-						m_lastErrorMsg = "Not logged In";
+					else
+					{
+						return null;
 					}
-				});
+				}
+				catch (IOException e) 
+				{
+					Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
+					m_lastErrorMsg = e.toString();
+				} 
+				catch (JSONException e) 
+				{
+					Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
+					m_lastErrorMsg = e.toString();
+				}
 			}
 			catch (UnsupportedEncodingException e) 
 			{
 				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e.getMessage());
-				return false;
+				return null;
+			} catch (IOException e1) {
+				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e1.getMessage());
+				m_lastErrorMsg = e1.toString();
+//				e1.printStackTrace();
 			}
-			return true;
+			return null;
 		}
-		return false;
+		return null;
 	}
 
-	public void getPassengers (List<BusTrip> trips)
+	public Boolean getPassengers (List<BusTrip> trips)
 	{
 		RestClient client = FlexibusApp.client;
 		
@@ -690,57 +688,54 @@ public class ApexApiCaller
 			try
 			{
 				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
-				client.sendAsync(restRequest, new AsyncRequestCallback() {
-						@Override
-						public void onSuccess(RestRequest request, RestResponse result)	
-						{
-							try
-							{
-								JSONArray records = result.asJSONObject().getJSONArray("records");
-								int count = records.length();
-								
-								String path = request.getPath();
-								Integer start = path.indexOf("Bus_Trip__c", 1) + 19;
-								String busTripID = path.substring(start, start+18);
-								
-								DBAdapter db = FlexibusApp.db;
-								for (int i=0;i<count;i++) 
-								{
-									JSONObject record = (JSONObject) records.get(i);
-									String salesforce_id = record.getString("Id");
-									String name = record.getString("Name");
-									String phone1 = record.getString("HomePhone");
-									String phone2 = record.getString("MobilePhone");
-									String street = record.getString("OtherStreet");
-									String town = record.getString("OtherCity");
-									String note = record.getString ("Note__c");
-									String ftp = record.getString("Free_Travel_Pass_Number__c");
-									db.insertPassenger(new Passenger (salesforce_id, busTripID, name, phone1, phone2, street, town, note, ftp, 0));
-								}
-							}
-							catch (IOException e) 
-							{
-								Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
-								m_lastErrorMsg = e.toString();
-							} 
-							catch (JSONException e) 
-							{
-								Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
-								m_lastErrorMsg = e.toString();
-							}
-						}
-						@Override
-						public void onError(Exception e) {
-							Log.v(DEBUG_TAG, "getTodaysBusTrips not logged in");
-							m_lastErrorMsg = "Not logged In";
-						}
-					});
+				RestResponse result = client.sendSync(restRequest);
+				try
+				{
+					JSONArray records = result.asJSONObject().getJSONArray("records");
+					int count = records.length();
+					
+					DBAdapter db = FlexibusApp.db;
+					for (int i=0;i<count;i++) 
+					{
+						JSONObject record = (JSONObject) records.get(i);
+						String salesforce_id = record.getString("Id");
+						String name = record.getString("Name");
+						String phone1 = record.getString("HomePhone");
+						String phone2 = record.getString("MobilePhone");
+						String street = record.getString("OtherStreet");
+						String town = record.getString("OtherCity");
+						String note = record.getString ("Note__c");
+						String ftp = record.getString("Free_Travel_Pass_Number__c");
+						db.insertPassenger(new Passenger (salesforce_id, busTripID, name, phone1, phone2, street, town, note, ftp, 0));
+					}
+				}
+				catch (IOException e) 
+				{
+					Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
+					m_lastErrorMsg = e.toString();
+					return false;
+				} 
+				catch (JSONException e) 
+				{
+					Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
+					m_lastErrorMsg = e.toString();
+					return false;
+				}
 			}
 			catch (UnsupportedEncodingException e) 
 			{
 				Log.v(DEBUG_TAG, "getPassengers " + e.getMessage());
+				m_lastErrorMsg = e.toString();
+				return false;
+			} 
+			catch (IOException e1) 
+			{
+				Log.v(DEBUG_TAG, "getPassengers " + e1.getMessage());
+				m_lastErrorMsg = e1.toString();
+				return false;
 			}
 		}
+		return true;
 	}
 	
 	public List<Passenger> getPassengerList(LocalDataHandler dataHandler, String busTripID) 
@@ -819,41 +814,24 @@ public class ApexApiCaller
 	*/
 	}
 
+	// these are only retrieved when the driver wants to send the trip reports
 	public JSONArray getPassengerTripRecords(String busTripIDs)
 	{
 		
-		OAuthTokens myTokens = getAccessTokens();
-		if (myTokens != null)
+		if (FlexibusApp.client != null)
 		{
+			RestClient client = FlexibusApp.client;
+
 			Log.v(DEBUG_TAG, "Start getPassengerTripRecords");
-			String url = myTokens.get_instance_url() + "/services/data/v20.0/query/?q=";
 			String soqlQuery = "Select Id, Bus_Trip__c, Passenger__c From Passenger_Trip__c where Bus_Trip__c in ("+busTripIDs+")";
 			
 			try
 			{
-				url += URLEncoder.encode(soqlQuery, "UTF-8");
-			}
-			catch(UnsupportedEncodingException e)
-			{
-				Log.v(DEBUG_TAG, "getPassengerTripRecords " + e.getMessage());
-				return null;
+				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
 
-			}
-			
-			HttpGet getRequest = new HttpGet(url);
-			getRequest.addHeader("Authorization", "OAuth " + myTokens.get_access_token());
-			
-			try 
-			{
-				Log.v(DEBUG_TAG, "HTTP call in getPassengerTripRecords");
-				String result = ProcessHttpCall (getRequest);
+				RestResponse result = client.sendSync(restRequest);
 
-				if (!result.equals(""))
-				{
-					JSONObject object = (JSONObject) new JSONTokener(result).nextValue();
-					Log.v(DEBUG_TAG, "End getPassengerTripRecords");
-					return object.getJSONArray("records");
-				}
+				return result.asJSONObject().getJSONArray("records");
 			}
 			catch (IOException e) 
 			{
@@ -866,30 +844,30 @@ public class ApexApiCaller
 		}
 		return null;
 	}
-	
-	public String sendTripReportsUsingSoap(LocalDataHandler dataHandler,  DBAdapter database) 
+
+	public String sendTripReports(LocalDataHandler dataHandler,  DBAdapter database) 
 	{
 		String result = "No trips to send";
-/*
- 		Log.v(DEBUG_TAG, "Start sendTripReports2");
+ 		Log.v(DEBUG_TAG, "Start sendTripReports");
  
 		String busTripIDs = database.getListOfBusTripsInPassengerTripTable();
 		if (busTripIDs != null)
 		{
 			// first save the bus trips, then save the passenger trips
-			ArrayList<SObject> trips = saveBusTripRecordsUsingSoap (busTripIDs, database);
+			String busTripsResult = sendBusTripReports (busTripIDs, database);
 			
-			if (trips == null)
+			if (busTripsResult != null)
 			{
-				return "No passengers to add";
+				return busTripsResult;
 			}
+			
 			JSONArray passengerTrips = getPassengerTripRecords (busTripIDs);
 			if (passengerTrips != null)
 			{
 				for (int i=0; i<passengerTrips.length(); i++)
 				{
 					JSONObject passengerTrip;
-					try 
+					try
 					{
 						passengerTrip = (JSONObject) passengerTrips.get(i);
 						String busTripID = passengerTrip.getString("Bus_Trip__c");
@@ -898,14 +876,13 @@ public class ApexApiCaller
 						if (pass != null)
 						{
 							Log.v(DEBUG_TAG, "sendTripReports Saving Trip Report for " + passengerTrip.getString("Id"));
-							SObject onePassengerTrip = saveTripReport (passengerTrip.getString("Id"), busTripID, passengerID, pass.passengerContribution, pass.actualCompanions, pass.passengerOnBoard);
-							trips.add(onePassengerTrip);
+							String onePassengerTripResult = sendOnePassengerTripReport (passengerTrip.getString("Id"), busTripID, passengerID, pass.passengerContribution, pass.actualCompanions, pass.passengerOnBoard);
 						}
-					} 
-					catch (JSONException e) 
+					}
+					catch (JSONException e)
 					{
-						Log.v(DEBUG_TAG, "sendTripReports Exception" + e.getMessage());
-						return e.getMessage();
+					Log.v(DEBUG_TAG, "sendTripReports Exception" + e.getMessage());
+					return e.getMessage();
 					}
 				}
 			}
@@ -913,125 +890,75 @@ public class ApexApiCaller
 			{
 				result = "No individual passengers found";
 			}
-			Log.v(DEBUG_TAG, "Sending " + trips.size() + " TripReports");
-			for (int i=1; i<trips.size(); i++)
-			{
-				Log.v(DEBUG_TAG, "Data type is: " + trips.get(i).getType());
-				Log.v(DEBUG_TAG, "Number of companions is: " + trips.get(i).getField("Number_of_Companions__c"));
-				Log.v(DEBUG_TAG, "Status is: " + trips.get(i).getField("id") + " " + trips.get(i).getField("Passenger_Trip_Status__c"));
-			}
-			Salesforce.update(trips , new UpdateResponseListener());
 			result = "Trip reports sent";
 		}
 		Log.v(DEBUG_TAG, "End sendTripReports2");
-		
-		*/
 		return result;
 	}
-	/*
-	private ArrayList<SObject> saveBusTripRecordsUsingSoap(String busTripIDs, DBAdapter database) 
+	
+	private String sendBusTripReports(String busTripIDs, DBAdapter database) 
 	{
 		String[]busTrips = busTripIDs.split(",");
 		Log.v(DEBUG_TAG, "Start saveBusTripRecordsUsingSoap");
 		
-		SObject sBusTrip = new SObject();
-		sBusTrip.setType("Bus_Trip__c");
-		
-		ArrayList<SObject> trips = new ArrayList<SObject>();
-		
 		for (String tripID: busTrips)
 		{
-			HashMap<String, String> data=new HashMap<String, String>();
-		    
 			tripID = tripID.replaceAll("'", "");
-			data.put("Id", tripID);
 			
 			String[] passengerNumbers = database.getPassengerNumbers(tripID);
 			if (passengerNumbers != null)
 			{
-				data.put("Free_Travel_Pass_Passengers__c", passengerNumbers[0]);
-				data.put("Fare_Paying_Passengers__c", passengerNumbers[1]);
-						     
-				sBusTrip.setFields(data);
-				trips.add(sBusTrip);
+				if (FlexibusApp.client != null)
+				{
+					RestClient client = FlexibusApp.client;
+					
+					Map<String, Object> data = new HashMap<String, Object>();
+					data.put("Free_Travel_Pass_Passengers__c", passengerNumbers[0]);
+					data.put("Fare_Paying_Passengers__c", passengerNumbers[1]);
+					
+					try 
+					{
+						RestRequest restRequest = RestRequest.getRequestForUpdate(API_VERSION, "Bus_Trip__c", tripID, data);
+						client.sendSync(restRequest);
+					}
+					catch (IOException e)
+					{
+						Log.v(DEBUG_TAG, "saveBusTripReports " + e.getMessage());
+						return e.getMessage();
+					}
+				}
 			}
 		}
 		Log.v(DEBUG_TAG, "End saveBusTripRecordsUsingSoap");
-		if (trips.size() > 0)
-		{
-			return trips;
-		}
-		else
-		{
-			return null;
-		}
+		return null;
 	}
 	
-	public class UpdateResponseListener extends BaseResponseListener
+
+
+	private String sendOnePassengerTripReport(String passengerTripID, String busTripID, String passengerID, int contribution, int companions, boolean status) 
 	{
-	    @SuppressWarnings("unchecked")
-		@Override
-	    public void onComplete(final Object cresults) 
-	    {
-	    	ArrayList<SaveResult> resultArray=(ArrayList<SaveResult>) cresults;
-	    	//StringBuffer collateResults=new StringBuffer();
-		    for (SaveResult sr: resultArray)
-		    {
-		    	if (sr.isSuccess())
-		    	{
-		    		System.out.println("Success");
-		    	}
-		    	else
-		    	{
-		    		System.out.println("Record "+ sr.getId()+ " update failed.");
-		    		if (sr.getErrors()!=null)
-		    		{
-		    			System.out.println("Error Message: " +
-		    					sr.getErrors().get(0).getMessage());
-		    			System.out.println("Status Code: "+
-		    					sr.getErrors().get(0).getStatusCode().getValue());
-		    		}
-		    	}
-		    }
-		}       
-		@Override
-		public void onSforceError(ApiFault apiFault)
+		Log.v(DEBUG_TAG, "Start saveTripReport for ID " + passengerTripID + " Status flag is " + status);
+		if (FlexibusApp.client != null)
 		{
-			String msg = apiFault.getExceptionMessage();
-			System.out.println("Error msg:" + msg);
-			String code = apiFault.getExceptionCode().getValue();
-			System.out.println("Error code:" + code);
-		}
-		@Override
-		public void onException(Exception e) {
-			// TODO Auto-generated method stub
+			RestClient client = FlexibusApp.client;
 			
+			Map<String, Object> data = new HashMap<String, Object>();
+			data.put("Contribution__c", Integer.toString(contribution));
+			data.put("Passenger_Trip_Status__c", status?"Travelled":"No Show");
+			
+			try 
+			{
+				RestRequest restRequest = RestRequest.getRequestForUpdate(API_VERSION, "Passenger_Trip__c", passengerTripID, data);
+					     
+				client.sendSync(restRequest);
+			}
+			catch (IOException e)
+			{
+				Log.v(DEBUG_TAG, "saveBusTripReports " + e.getMessage());
+				return e.getMessage();
+			}
 		}
+		return null;
 	}
 
-	private SObject saveTripReport(String salesforceID, String busTripID, String passengerID, int contribution, int companions, boolean status) 
-	{
-		Log.v(DEBUG_TAG, "Start saveTripReport for ID " + salesforceID + " Status flag is " + status);
-		SObject tripReport = new SObject();
-		tripReport.setType("Passenger_Trip__c");
-/*			
-		HashMap<String, String> data=new HashMap<String, String>();
-	    
-		data.put("Id", salesforceID.replaceAll("'", ""));
-		//data.put("Bus_Trip__c", busTripID); -- passenger trip is now a child of the bus trip
-		data.put("Contribution__c", Integer.toString(contribution));
-		//data.put("Passenger__c", passengerID);
-		//data.put("Number_of_Companions__c", Integer.toString(companions));
-		data.put("Passenger_Trip_Status__c", "Travelled");
-		
-		tripReport.setFields(data);
-
-		tripReport.setField("id", salesforceID);
-		tripReport.setField("Passenger_Trip_Status__c", status?"Travelled":"No Show");
-		Log.v(DEBUG_TAG, "Data type is: " + tripReport.getType());
-		Log.v(DEBUG_TAG, "Status is: " + tripReport.getField("Id") + " " + tripReport.getField("Passenger_Trip_Status__c"));
-		Log.v(DEBUG_TAG, "End sendTripReport");
-		return tripReport;
-	}
-*/
 }
