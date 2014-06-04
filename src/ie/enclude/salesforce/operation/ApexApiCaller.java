@@ -10,18 +10,15 @@ package ie.enclude.salesforce.operation;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-//import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
@@ -36,13 +33,6 @@ import com.android.volley.VolleyError;
 import com.salesforce.androidsdk.rest.RestClient;
 import com.salesforce.androidsdk.rest.RestClient.AsyncRequestCallback;
 import com.salesforce.androidsdk.rest.RestRequest;
-/*
-import com.sforce.android.soap.partner.BaseResponseListener;
-import com.sforce.android.soap.partner.Salesforce;
-import com.sforce.android.soap.partner.SaveResult;
-import com.sforce.android.soap.partner.fault.ApiFault;
-import com.sforce.android.soap.partner.sobject.SObject;
-*/
 import android.util.Log;
 import ie.enclude.flexibus.CONSTANTS;
 import ie.enclude.flexibus.FlexibusApp;
@@ -145,7 +135,6 @@ public class ApexApiCaller
 	
 	public boolean getBuses(final LocalDataHandler dataHandler, final SalesforceResponseInterface sfrp) 
 	{	
-//		TODO - working here
 		if (FlexibusApp.client != null)
 		{
 			RestClient client = FlexibusApp.client;
@@ -193,14 +182,6 @@ public class ApexApiCaller
 				Log.v(DEBUG_TAG, "getBuses " + e.getMessage());
 				return false;
 			}
-			
-/*			catch (IOException e) 
-			{
-				Log.v(DEBUG_TAG, "getBuses " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return false;
-			} 
-			*/
 		}
 		else
 		{
@@ -316,6 +297,7 @@ public class ApexApiCaller
 		return null;
 	}
 
+	@SuppressWarnings("unused")
 	private String ProcessHttpCall(HttpUriRequest request) throws ClientProtocolException, IOException, JSONException 
 	{
 		DefaultHttpClient client = new DefaultHttpClient(); 
@@ -667,7 +649,6 @@ public class ApexApiCaller
 			} catch (IOException e1) {
 				Log.v(DEBUG_TAG, "getTodaysBusTrips " + e1.getMessage());
 				m_lastErrorMsg = e1.toString();
-//				e1.printStackTrace();
 			}
 			return null;
 		}
@@ -742,76 +723,6 @@ public class ApexApiCaller
 	{
 		DBAdapter db = FlexibusApp.db;
 		return db.getAllPassengers (busTripID);
-	/*
-		if (FlexibusApp.client != null)
-		{
-			RestClient client = FlexibusApp.client;
-			
-			String soqlQuery = "Select Id, Name, HomePhone, MobilePhone, OtherStreet, OtherCity, Note__c, Free_Travel_Pass_Number__c from Contact "
-					+ "where id in (select Passenger__c from Passenger_Trip__c where Bus_Trip__c = '" + busTripID + "')";
-			
-			try
-			{
-				RestRequest restRequest = RestRequest.getRequestForQuery(API_VERSION, soqlQuery);
-				
-				client.sendAsync(restRequest, new AsyncRequestCallback() {
-					@Override
-					public void onSuccess(RestRequest request, RestResponse result) {
-						try 
-						{
-							JSONArray records = result.asJSONObject().getJSONArray("records");
-							int count = records.length();
-								
-							List<Passenger> passengers = new ArrayList<Passenger>(count);
-								
-							for (int i=0;i<count;i++) 
-							{
-								JSONObject record = (JSONObject) records.get(i);
-								String salesforce_id = record.getString("Id");
-								String name = record.getString("Name");
-								String phone1 = record.getString("HomePhone");
-								String phone2 = record.getString("MobilePhone");
-								String street = record.getString("OtherStreet");
-								String town = record.getString("OtherCity");
-								String note = record.getString ("Note__c");
-								String ftp = record.getString("Free_Travel_Pass_Number__c");
-								passengers.add (new Passenger (salesforce_id, busTripID, name, phone1, phone2, street, town, note, ftp, 0));
-							}
-							m_lastErrorMsg = "";
-						}
-			}
-			catch(UnsupportedEncodingException e)
-			{
-				Log.v(DEBUG_TAG, "getPassengerList " + e.getMessage());
-				return null;
-			}
-			
-				else
-				{
-					m_lastErrorMsg = "Failed to process Http call";
-					return null;
-				}
-			} 
-			catch (IOException e) 
-			{
-				Log.v(DEBUG_TAG, "getPassengerList " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return null;
-			} 
-			catch (JSONException e) 
-			{
-				Log.v(DEBUG_TAG, "getPassengerList " + e.getMessage());
-				m_lastErrorMsg = e.toString();
-				return null;
-			}
-		}
-		else
-		{
-			Log.v(DEBUG_TAG, "getPassengerList not logged in");
-			m_lastErrorMsg = "Not logged In";
-			return null;
-		}
-	*/
 	}
 
 	// these are only retrieved when the driver wants to send the trip reports
@@ -876,7 +787,7 @@ public class ApexApiCaller
 						if (pass != null)
 						{
 							Log.v(DEBUG_TAG, "sendTripReports Saving Trip Report for " + passengerTrip.getString("Id"));
-							String onePassengerTripResult = sendOnePassengerTripReport (passengerTrip.getString("Id"), busTripID, passengerID, pass.passengerContribution, pass.actualCompanions, pass.passengerOnBoard);
+							sendOnePassengerTripReport (passengerTrip.getString("Id"), busTripID, passengerID, pass.passengerContribution, pass.actualCompanions, pass.passengerOnBoard);
 						}
 					}
 					catch (JSONException e)

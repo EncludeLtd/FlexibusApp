@@ -3,7 +3,6 @@ package ie.enclude.flexibus;
 public class CONSTANTS 
 {
 	public static final boolean TESTING = false;
-	public static final String VERSION = "v2.00";
 	
 	public static final String UNDEFINED_BUS_NAME = "Undefined";
 	

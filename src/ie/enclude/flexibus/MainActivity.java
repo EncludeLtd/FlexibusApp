@@ -27,14 +27,11 @@
 package ie.enclude.flexibus;
 
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-
 import org.json.JSONArray;
 
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.salesforce.androidsdk.app.SalesforceSDKManager;
@@ -62,12 +59,6 @@ public class MainActivity extends SalesforceActivity {
 	
 	@Override 
 	public void onResume() {
-		// Hide everything until we are logged in
-//		findViewById(R.id.root).setVisibility(View.INVISIBLE);
-
-		// Create list adapter
-//		listAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, new ArrayList<String>());
-//		((ListView) findViewById(R.id.contacts_list)).setAdapter(listAdapter);				
 		
 		super.onResume();
 	}		
@@ -76,9 +67,6 @@ public class MainActivity extends SalesforceActivity {
 	public void onResume(RestClient client) {
         // Keeping reference to rest client
         this.client = client; 
-
-		// Show everything
-//		findViewById(R.id.root).setVisibility(View.VISIBLE);
 	}
 
 	/**

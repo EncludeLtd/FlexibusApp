@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="account_type">ie.enclude.flexibus.login</string>
-	<string name="app_name"><b>Flexibus</b></string>
+	<string name="app_name">Flexibus</string>
 	<string name="app_package">ie.enclude.flexibus</string>
     <string name="welcome">Welcome %s</string>
 	<string name="logout_button">Logout</string>
 	<string name="fetch_contacts_button">Fetch Contacts</string>
 	<string name="fetch_accounts_button">Fetch Accounts</string>
 	<string name="clear_button">Clear</string>
-   <string name="initialText">Enter odometer reading</string>
-    <string name="app_name">Flexibus</string>
+    <string name="initialText">Enter odometer reading</string>
     <string name="appby">an app by</string>
-    <string name="version">V1.0</string>
+    <string name="encludelogotext">Enclude Logo</string>
+    <string name="flexibuslogotext">Flexibus Logo</string>
+    <string name="version">Version</string>
     <string name="readytosend">Ready to send odometer reading</string><string name="readytosendFuelPurchase">Ready to send fuel purchase record</string>
     <string name="sentMessage">Sent Odometer reading %1$s</string>
     <string name="sendingMessage">Sending SMS message</string>

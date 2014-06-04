@@ -1,28 +1,21 @@
 package ie.enclude.flexibus;
 
-import ie.enclude.flexibus.PassengerList.SalesforceLoadProviderSheetTask;
 import ie.enclude.flexibus.database.DBAdapter;
 import ie.enclude.flexibus.util.BusTrip;
 import ie.enclude.flexibus.util.BusTripAdapter;
 import ie.enclude.flexibus.util.Passenger;
-import ie.enclude.flexibus.util.PassengerAdapter;
-
 import java.util.List;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.CheckedTextView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -92,7 +85,6 @@ public class TodaysBusServiceList extends ListActivity
     	}
     	
 		FlexibusApp gs = (FlexibusApp) getApplication();
-		// busTrips = gs.getCurrentServiceList();
 		DBAdapter db = gs.getDatabase();
 		if (!db.ContainsTodaysTrips(gs.getCurrentBusName()))
 		{
@@ -189,28 +181,13 @@ public class TodaysBusServiceList extends ListActivity
 			}
 			else
 			{
-				if (busTrips != null)
-				{
-//					addPassengersToDatabase ();
-					prepareListView(); 
-				}
-				else
-				{
-					final FlexibusApp gs = (FlexibusApp) getApplication();
-					String errormsg = gs.getDataHandler().getLastError(); 
-					if (errormsg == null || errormsg.equals(""))
-					{
-						errormsg = "No trips for this bus today";
-					}
-					Toast.makeText(getApplicationContext(), errormsg, Toast.LENGTH_SHORT).show();
-					finish();
-				}
+				prepareListView(); 
 			}
 		}
 	}
     public void prepareListView() 
 	{
-		if (busTrips != null)
+		if (busTrips != null && busTrips.size()>0)
 		{
 			final FlexibusApp gs = (FlexibusApp) getApplication();
 			DBAdapter db = gs.getDatabase();
@@ -230,7 +207,6 @@ public class TodaysBusServiceList extends ListActivity
 						return;
 					}
 			    	FlexibusApp gs = (FlexibusApp) getApplication();
-//			    	DBAdapter db = gs.getDatabase();
 			    	BusTrip selectedTrip = busTrips.get(position - CONSTANTS.LIST_HEADER_OFFSET);
 			    	gs.setCurrentBusTripID(selectedTrip.salesforce_ID);
 			    	
@@ -239,7 +215,17 @@ public class TodaysBusServiceList extends ListActivity
 			    	return;
 			    }
 			  });
-
+		}
+		else
+		{
+			final FlexibusApp gs = (FlexibusApp) getApplication();
+			String errormsg = gs.getDataHandler().getLastError(); 
+			if (errormsg == null || errormsg.equals(""))
+			{
+				errormsg = "No trips for this bus today";
+			}
+			Toast.makeText(getApplicationContext(), errormsg, Toast.LENGTH_SHORT).show();
+			finish();
 		}
 	}
 

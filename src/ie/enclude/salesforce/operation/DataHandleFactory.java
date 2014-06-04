@@ -23,28 +23,6 @@ public class DataHandleFactory {
 	{
 		bLoggedIn = true;
 		return "Logged In";
-/*		
-		String result = "";
-		if (!bLoggedIn)
-		{
-			String errorMsg = ldh.loginWithApi();
-			if (errorMsg.length() == 0)
-			{
-				bLoggedIn = true;
-				result = "Logged In";
-			}
-			else
-			{
-				bLoggedIn = false;
-				result = "Failed to login, please try again later " + errorMsg;
-			}
-		}
-		else
-		{
-			// TODO: test access token
-		}
-		return result;
-*/
 	}
 	
 	public boolean getBuses(SalesforceResponseInterface sfrp) 

@@ -2,6 +2,8 @@ package ie.enclude.flexibus;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.os.Handler;
 import android.widget.ImageView;
@@ -21,7 +23,7 @@ public class Splash extends Activity
     	super.onCreate(icicle);
         setContentView(R.layout.splashscreen);
         m_versionText = (TextView) findViewById(R.string.version);
-        m_versionText.setText (CONSTANTS.VERSION);
+        m_versionText.setText (getVersionInfo());
         if (CONSTANTS.TESTING)
         {
         	m_versionText.append("t");
@@ -60,5 +62,20 @@ public class Splash extends Activity
                 Splash.this.finish();
             }
          }, SPLASH_DISPLAY_LENGTH);
+    }
+    
+    public String getVersionInfo() {
+        String strVersion = "Version: ";
+
+        PackageInfo packageInfo;
+        try {
+            packageInfo = getApplicationContext().getPackageManager().getPackageInfo(
+                    getApplicationContext().getPackageName(), 0);
+            strVersion += packageInfo.versionName;
+        } catch (NameNotFoundException e) {
+            strVersion += "Unknown";
+        }
+
+        return strVersion;
     }
 }

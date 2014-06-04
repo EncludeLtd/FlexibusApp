@@ -27,7 +27,6 @@
 package ie.enclude.flexibus;
 
 import ie.enclude.flexibus.database.DBAdapter;
-import ie.enclude.flexibus.util.BusTrip;
 import ie.enclude.flexibus.util.Passenger;
 import ie.enclude.salesforce.operation.DataHandleFactory;
 

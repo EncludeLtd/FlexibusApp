@@ -1,11 +1,4 @@
 package ie.enclude.flexibus;
-/*
-import com.sforce.android.soap.partner.BaseResponseListener;
-import com.sforce.android.soap.partner.ConnectorConfig;
-import com.sforce.android.soap.partner.LoginResult;
-import com.sforce.android.soap.partner.Salesforce;
-import com.sforce.android.soap.partner.fault.ExceptionCode;
-*/
 import com.salesforce.androidsdk.app.SalesforceSDKManager;
 import com.salesforce.androidsdk.rest.RestClient;
 import com.salesforce.androidsdk.ui.sfnative.SalesforceActivity;
@@ -113,7 +106,6 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
         super.onCreate(savedInstanceState);
 	
     	m_context=getApplicationContext();
-//    	Salesforce.init(m_context);
 
         mRuntimeOrientation = this.getScreenOrientation();
         setContentView(R.layout.main);
@@ -153,7 +145,6 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 	    	       
 	    		String savedOdoReading = persistanceData.getString("LastBusOdoReading", "0");
 		     	gs.setSavedBusState (busName, savedOdoReading);
-	//	     	new SalesforceInitialiseBusTask().execute(gs);
 		     	if (gs.getDataHandler().initialiseSelectedBus(gs.getSavedBusName(), gs.getSavedBusOdoReading(), this) == false)
 		     	{
 		     		m_progress.dismiss();
@@ -189,8 +180,6 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
         // Keeping reference to rest client
 		FlexibusApp.client = client; 
         RetrievePersistantState();
-
-//   		updateCurrentBusStatus();
 	}
 
 	@Override 
@@ -397,7 +386,6 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 		m_passengerListButton.setOnClickListener(new View.OnClickListener() { 
         	public void onClick(View v) 
         	{
-//        		launchPassengerList();
         		launchServiceList();
         	}
         });
@@ -597,8 +585,11 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
         }
         mDisableScreenRotation=false;
 
-        m_statusText.setText(result);
-        Toast.makeText(getBaseContext(), result, Toast.LENGTH_SHORT).show();
+        if (result != "")
+        {
+        	m_statusText.setText(result);
+        	Toast.makeText(getBaseContext(), result, Toast.LENGTH_SHORT).show();
+        }
     	updateCurrentBusStatus();
 	}
 	
@@ -620,8 +611,11 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 				m_progress = null;
 	        }
 	        mDisableScreenRotation=false;
-	        m_statusText.setText(result);
-	        Toast.makeText(getBaseContext(), result, Toast.LENGTH_SHORT).show();
+	        if (result != "")
+	        {
+	        	m_statusText.setText(result);
+	        	Toast.makeText(getBaseContext(), result, Toast.LENGTH_SHORT).show();
+	        }
 		}
 
 	}
@@ -671,7 +665,6 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 		protected String doInBackground(FlexibusApp... gs) 
 		{
 			gs[0].getDataHandler().localLogin();
-//			SalesforceSoapLogin();
 			return gs[0].getDataHandler().sendTripReports(gs[0].getDatabase());
 		}
 
@@ -683,65 +676,13 @@ public class FlexibusActivity extends SalesforceActivity implements SalesforceRe
 				m_progress = null;
 	        }
 	        mDisableScreenRotation=false;
-	        m_statusText.setText(result);
-	        Toast.makeText(getBaseContext(), result, Toast.LENGTH_SHORT).show();
+	        if (result != "")
+	        {
+	        	m_statusText.setText(result);
+	        	Toast.makeText(getBaseContext(), result, Toast.LENGTH_SHORT).show();
+	        }
 	        FlexibusApp gs = (FlexibusApp) getApplication();
 	   		gs.clearPassengerListFlag();
 		}
-
 	}
-/*	
-	public void SalesforceSoapLogin()
-	{
-		Log.v(DEBUG_TAG, "Start SOAP Login");
-		ConnectorConfig parameters = new
-		ConnectorConfig(StaticInformation.USER_ID,
-				StaticInformation.USER_PW,
-				StaticInformation.USER_TOKEN);
-		if (CONSTANTS.TESTING)
-		{
-			 parameters.setIsSandbox(true);
-		}
-		try 
-		{
-			Salesforce.login(parameters, new LoginResponseListener());
-		}
-		catch (Exception e) 
-		{
-			Log.v(DEBUG_TAG, "Attempt to login using SOAP " + e.getMessage());
-		}
-	}
-
-	public class LoginResponseListener extends BaseResponseListener 
-	{
-		@Override
-		public void onComplete(Object sObjects) 
-		{
-			LoginResult result = (LoginResult) sObjects;
-			String id = result.getUserId();
-			System.out.println("User id is:" + id);
-			String orgId = result.getUserInfo().getOrganizationId();
-			System.out.println("Org id is:" + orgId);
-        }
-
-		@Override
-		public void onSforceError(com.sforce.android.soap.partner.fault.ApiFault apiFault) 
-		{
-			String msg = apiFault.getExceptionMessage();
-			System.out.println("Error msg:" + msg);
-			String code = apiFault.getExceptionCode().getValue();
-			System.out.println("Error code:" + code);
-			if (code.equals(ExceptionCode._INVALID_LOGIN)) 
-			{
-				Toast.makeText(m_context, "Invalid login", Toast.LENGTH_SHORT).show();
-			}
-		}
-
-		@Override
-		public void onException(Exception e) {
-			// TODO Auto-generated method stub
-			
-		}
-	}
-	*/
 }
